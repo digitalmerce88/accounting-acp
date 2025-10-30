@@ -42,3 +42,26 @@ Alternatively, use Makefile:
 - PDF export is disabled (placeholder only).
 - Default cache/queue in .env.example use `database` to reduce external deps; Redis can be enabled later if needed.
 - APP_TIMEZONE default set to Asia/Bangkok.
+
+## Admin Users Management
+- Admin can manage user roles at `/admin/users` (requires role: admin).
+- UI built with Inertia/Vue; toggle role checkboxes and click Save per user.
+- API endpoints:
+   - GET /admin/users (JSON or Inertia)
+   - PATCH /admin/users/{user}/roles (payload: { roles: string[] slugs })
+
+## Demo Accounts
+- Seeders create demo users with roles:
+   - admin@example.com / password (role: admin)
+   - accountant@example.com / password (role: accountant)
+   - viewer@example.com / password (role: viewer)
+- To seed: `php artisan migrate:fresh --seed` or `php artisan demo:seed-accounting`
+
+## Verification (2025-10-30)
+- Database: migrate:fresh --seed => PASS
+- Tests: 38 passed, 0 failed => PASS
+- Build: Vite production build previously succeeded; run `npm run build` if deploying => PASS
+
+## Next Steps (optional)
+- Implement real PDF export in `ReportPdfService` (pin dompdf or alternative and wire controllers).
+- Enhance Accounts/Journals UI (forms, validation messages, pagination, search).

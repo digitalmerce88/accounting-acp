@@ -1,12 +1,14 @@
 <template>
   <AdminLayout>
-    <h1 class="text-2xl font-bold mb-4">Users</h1>
-    <div v-if="flash.status" class="mb-4 text-green-700">{{ flash.status }}</div>
+    <div class="flex items-center justify-between">
+      <h1 class="text-xl font-semibold">Users</h1>
+      <div v-if="flash.status" class="text-green-700 text-sm">{{ flash.status }}</div>
+    </div>
 
-    <div class="overflow-x-auto">
-      <table class="min-w-full border">
-        <thead>
-          <tr class="bg-gray-100">
+    <div class="mt-4 overflow-x-auto">
+      <table class="min-w-full border text-sm">
+        <thead class="bg-gray-50">
+          <tr>
             <th class="p-2 text-left border">Name</th>
             <th class="p-2 text-left border">Email</th>
             <th class="p-2 text-left border">Roles</th>
@@ -14,7 +16,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="user in localUsers" :key="user.id" class="border-b">
+          <tr v-for="user in localUsers" :key="user.id" class="border-b hover:bg-gray-50">
             <td class="p-2 border">{{ user.name }}</td>
             <td class="p-2 border">{{ user.email }}</td>
             <td class="p-2 border">
