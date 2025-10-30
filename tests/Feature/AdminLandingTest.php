@@ -7,10 +7,11 @@ use Tests\TestCase;
 class AdminLandingTest extends TestCase
 {
     /** @test */
-    public function admin_root_redirects_to_trial_balance(): void
+    public function admin_root_requires_auth_and_redirects_to_login(): void
     {
         $response = $this->get('/admin');
 
-        $response->assertRedirect('/admin/reports/trial-balance');
+        // Without login, admin area should redirect to /login
+        $response->assertRedirect('/login');
     }
 }

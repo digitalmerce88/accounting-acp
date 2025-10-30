@@ -3,9 +3,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Accounting\ReportController;
 use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Accounting\JournalController;
+use App\Http\Middleware\EnsureRole;
 
 Route::get('/', fn()=> redirect('/admin'));
-Route::prefix('admin')->group(function () {
+Route::prefix('admin')->middleware(['web', EnsureRole::class.':admin,accountant'])->group(function () {
     // Admin landing: redirect to default report
     Route::get('/', fn () => redirect()->route('reports.trial'))->name('admin.home');
     Route::get('/reports/trial-balance', [ReportController::class, 'trialBalance'])->name('reports.trial');
