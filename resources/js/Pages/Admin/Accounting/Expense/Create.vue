@@ -124,10 +124,12 @@ function onFiles(e){ form.files = Array.from(e.target.files||[]) }
 function submit(){
   busy.value = true
   const fd = new FormData()
+  const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
   Object.entries(form).forEach(([k,v])=>{
     if(k==='files') return
     fd.append(k, v==null?'':v)
   })
+  if (csrf) fd.append('_token', csrf)
   ;(form.files||[]).forEach(f=> fd.append('files[]', f))
   router.post('/admin/accounting/expense', fd, {
     forceFormData: true,
