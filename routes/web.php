@@ -12,6 +12,7 @@ use App\Http\Middleware\EnsureRole;
 use App\Http\Controllers\Admin\Accounting\AccountsController as AdminAccounts;
 use App\Http\Controllers\Admin\Accounting\JournalsController as AdminJournals;
 use App\Http\Controllers\Admin\Accounting\ReportsController as AdminReports;
+use App\Http\Controllers\Admin\Accounting\CloseController as AdminClose;
 use App\Http\Controllers\Admin\UsersController as AdminUsers;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
 
@@ -64,9 +65,11 @@ Route::prefix('admin')->middleware(['auth', EnsureRole::class.':admin,accountant
         // Reports
         Route::get('/reports/trial-balance', [AdminReports::class, 'trialBalance'])->name('reports.trial-balance');
         Route::get('/reports/ledger', [AdminReports::class, 'ledger'])->name('reports.ledger');
+    Route::get('/reports/profit-and-loss', [AdminReports::class, 'profitAndLoss'])->name('reports.pnl');
         Route::get('/reports/trial-balance.csv', [AdminReports::class, 'trialBalanceCsv'])->name('reports.trial-balance.csv');
     Route::get('/reports/trial-balance.pdf', [AdminReports::class, 'trialBalancePdf'])->name('reports.trial-balance.pdf');
         Route::get('/reports/ledger.csv', [AdminReports::class, 'ledgerCsv'])->name('reports.ledger.csv');
+    Route::get('/reports/profit-and-loss.csv', [AdminReports::class, 'profitAndLossCsv'])->name('reports.pnl.csv');
     Route::get('/reports/ledger.pdf', [AdminReports::class, 'ledgerPdf'])->name('reports.ledger.pdf');
 
         // S3 Summary Reports
@@ -82,6 +85,9 @@ Route::prefix('admin')->middleware(['auth', EnsureRole::class.':admin,accountant
         Route::get('/reports/tax/purchase-vat.csv', [AdminReports::class, 'taxPurchaseVatCsv'])->name('reports.tax.purchase.csv');
         Route::get('/reports/tax/sales-vat.csv', [AdminReports::class, 'taxSalesVatCsv'])->name('reports.tax.sales.csv');
         Route::get('/reports/tax/wht-summary.csv', [AdminReports::class, 'whtSummaryCsv'])->name('reports.tax.wht.csv');
+
+        // Close month
+        Route::post('/close/month', [AdminClose::class, 'month'])->name('close.month');
     });
 
     // Admin Users management (admin only)

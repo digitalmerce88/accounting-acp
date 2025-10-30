@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Domain\Accounting\Services\ReportPdfService;
 use App\Domain\Accounting\Services\SummaryReportService;
+use App\Domain\Accounting\Services\ProfitAndLossService;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportsController extends Controller
@@ -202,6 +203,31 @@ class ReportsController extends Controller
             foreach ($rows as $r) { fputcsv($out, $r); }
             fclose($out);
         }, 'ledger.csv', ['Content-Type' => 'text/csv']);
+    }
+
+    public function profitAndLoss(Request $request)
+    {
+        $svc = new ProfitAndLossService();
+        $data = $svc->run($request->query('from'), $request->query('to'));
+        if ($request->wantsJson()) return response()->json($data);
+        return Inertia::render('Admin/Accounting/Reports/ProfitAndLoss', $data);
+    }
+
+    public function profitAndLossCsv(Request $request)
+    {
+        $svc = new ProfitAndLossService();
+        $data = $svc->run($request->query('from'), $request->query('to'));
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="profit-and-loss.csv"',
+        ];
+        $callback = function() use ($data) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['ตั้งแต่','ถึง','รายได้','ค่าใช้จ่าย','กำไรสุทธิ']);
+            fputcsv($out, [$data['from'],$data['to'],$data['revenue'],$data['expense'],$data['net']]);
+            fclose($out);
+        };
+        return response()->stream($callback, 200, $headers);
     }
 
     public function trialBalancePdf(Request $request)
