@@ -90,7 +90,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { usePage, router } from '@inertiajs/vue3'
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch, toRaw } from 'vue'
 
 const p = usePage().props
 const categories = computed(()=> p.categories || [])
@@ -122,9 +122,23 @@ const whtPercent = ref(0)
 watch(whtPercent, v=>{ form.wht_rate = Math.max(0, Number(v||0))/100 })
 
 const busy = ref(false)
+const errors = reactive({})
 function onFiles(e){ form.files = Array.from(e.target.files||[]) }
 function submit(){
   busy.value = true
+  console.log('Income.submit clicked', toRaw(form))
+  // basic client-side checks
+  errors.date = null; errors.amount = null; errors.category_id = null
+  if (!form.category_id) {
+    errors.category_id = 'กรุณาเลือกหมวดรายได้'
+    busy.value = false
+    return
+  }
+  if (!form.amount || Number(form.amount) <= 0) {
+    errors.amount = 'จำนวนเงินต้องมากกว่า 0'
+    busy.value = false
+    return
+  }
   const fd = new FormData()
   const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
   Object.entries(form).forEach(([k,v])=>{
@@ -135,7 +149,20 @@ function submit(){
   ;(form.files||[]).forEach(f=> fd.append('files[]', f))
   router.post('/admin/accounting/income', fd, {
     forceFormData: true,
+    onSuccess: (page)=>{
+      console.log('Income.post onSuccess', page)
+    },
+    onError: (resp)=>{
+      console.error('Income.post onError', resp)
+      if (resp && resp.errors) {
+        Object.assign(errors, resp.errors)
+      }
+    },
     onFinish: ()=> busy.value=false,
   })
 }
 </script>
+
+<style scoped>
+.field-error { color: #065f46; font-size: .9rem; margin-top: .25rem }
+</style>
