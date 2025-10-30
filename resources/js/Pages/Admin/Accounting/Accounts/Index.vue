@@ -40,7 +40,7 @@
       </div>
     </div>
   </AdminLayout>
-  
+
 </template>
 
 <script setup>

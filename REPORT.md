@@ -50,6 +50,12 @@ Alternatively, use Makefile:
    - GET /admin/users (JSON or Inertia)
    - PATCH /admin/users/{user}/roles (payload: { roles: string[] slugs })
 
+## Admin Dashboard
+- Landing at `/admin` shows dashboard with metrics and recents:
+   - accounts_count, journals_count, trial balance totals (DR/CR)
+   - recent 5 journals (date, memo, status)
+- JSON also available at `/admin` for automation/tests
+
 ## Demo Accounts
 - Seeders create demo users with roles:
    - admin@example.com / password (role: admin)
@@ -59,8 +65,8 @@ Alternatively, use Makefile:
 
 ## Verification (2025-10-30)
 - Database: migrate:fresh --seed => PASS
-- Tests: 38 passed, 0 failed => PASS
-- Build: Vite production build previously succeeded; run `npm run build` if deploying => PASS
+- Tests: 39 passed, 0 failed => PASS
+- Build: Vite production build recently succeeded => PASS
 
 ## Next Steps (optional)
 - Implement real PDF export in `ReportPdfService` (pin dompdf or alternative and wire controllers).

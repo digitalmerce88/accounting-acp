@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\Accounting\AccountsController as AdminAccounts;
 use App\Http\Controllers\Admin\Accounting\JournalsController as AdminJournals;
 use App\Http\Controllers\Admin\Accounting\ReportsController as AdminReports;
 use App\Http\Controllers\Admin\UsersController as AdminUsers;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -37,8 +38,8 @@ require __DIR__.'/auth.php';
 
 // Admin area protected by auth + role
 Route::prefix('admin')->middleware(['auth', EnsureRole::class.':admin,accountant'])->group(function () {
-    // Admin landing: redirect to default report
-    Route::get('/', fn () => redirect()->route('admin.accounting.reports.trial-balance'))->name('admin.home');
+    // Admin landing: dashboard
+    Route::get('/', [AdminDashboard::class, 'index'])->name('admin.home');
 
     // Old backup and simple journal endpoint (keep for compatibility)
     Route::get('/settings/backup', [BackupController::class, 'download'])->name('settings.backup');
