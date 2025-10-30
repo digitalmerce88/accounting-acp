@@ -141,7 +141,12 @@ function submit(){
   const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
   Object.entries(form).forEach(([k,v])=>{
     if(k==='files') return
-    fd.append(k, v==null?'':v)
+    // Coerce boolean to '1'/'0' for Laravel boolean validation
+    if (typeof v === 'boolean') {
+      fd.append(k, v ? '1' : '0')
+    } else {
+      fd.append(k, v==null ? '' : v)
+    }
   })
   if (csrf) fd.append('_token', csrf)
   ;(form.files||[]).forEach(f=> fd.append('files[]', f))
