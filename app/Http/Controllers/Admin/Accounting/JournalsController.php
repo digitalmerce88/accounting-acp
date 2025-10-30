@@ -6,6 +6,7 @@ use App\Domain\Accounting\Services\JournalService;
 use App\Http\Controllers\Controller;
 use App\Models\{JournalEntry,JournalLine};
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -13,13 +14,19 @@ class JournalsController extends Controller
 {
     public function index(Request $request)
     {
-        $q = JournalEntry::query()->orderByDesc('date')->orderByDesc('id');
-        return response()->json($q->paginate(20));
+        if ($request->wantsJson()) {
+            $q = JournalEntry::query()->orderByDesc('date')->orderByDesc('id');
+            return response()->json($q->paginate(20));
+        }
+        return Inertia::render('Admin/Accounting/Journals/Index');
     }
 
     public function create()
     {
-        return response()->json(['message'=>'Provide date, memo, and lines on POST /admin/accounting/journals']);
+        if (request()->wantsJson()) {
+            return response()->json(['message'=>'Provide date, memo, and lines on POST /admin/accounting/journals']);
+        }
+        return Inertia::render('Admin/Accounting/Journals/Create');
     }
 
     public function store(Request $request, JournalService $svc)
@@ -50,9 +57,12 @@ class JournalsController extends Controller
 
     public function show(int $id)
     {
-        $e = JournalEntry::with(['id'])->findOrFail($id);
-        $lines = JournalLine::where('entry_id',$id)->orderBy('id')->get();
-        return response()->json(['entry'=>$e,'lines'=>$lines]);
+        if (request()->wantsJson()) {
+            $e = JournalEntry::with(['id'])->findOrFail($id);
+            $lines = JournalLine::where('entry_id',$id)->orderBy('id')->get();
+            return response()->json(['entry'=>$e,'lines'=>$lines]);
+        }
+        return Inertia::render('Admin/Accounting/Journals/Show', ['id'=>$id]);
     }
 
     public function destroy(int $id)

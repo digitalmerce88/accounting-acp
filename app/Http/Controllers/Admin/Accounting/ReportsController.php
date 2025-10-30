@@ -6,6 +6,7 @@ use App\Domain\Accounting\Reports\TrialBalance as TrialBalanceReport;
 use App\Domain\Accounting\Reports\Ledger as LedgerReport;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class ReportsController extends Controller
 {
@@ -13,8 +14,11 @@ class ReportsController extends Controller
     {
         $from = $request->query('from');
         $to = $request->query('to');
-        $rows = (new TrialBalanceReport())->run($from, $to);
-        return response()->json(['data'=>$rows]);
+        if ($request->wantsJson()) {
+            $rows = (new TrialBalanceReport())->run($from, $to);
+            return response()->json(['data'=>$rows]);
+        }
+        return Inertia::render('Admin/Accounting/Reports/TrialBalance');
     }
 
     public function ledger(Request $request)
@@ -22,8 +26,11 @@ class ReportsController extends Controller
         $accountId = (int) $request->query('account_id');
         $from = $request->query('from');
         $to = $request->query('to');
-        $rows = (new LedgerReport())->run($accountId, $from, $to);
-        return response()->json(['data'=>$rows]);
+        if ($request->wantsJson()) {
+            $rows = (new LedgerReport())->run($accountId, $from, $to);
+            return response()->json(['data'=>$rows]);
+        }
+        return Inertia::render('Admin/Accounting/Reports/Ledger');
     }
 
     public function trialBalanceCsv(Request $request)

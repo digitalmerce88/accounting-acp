@@ -1,5 +1,10 @@
+
 <?php
+
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Accounting\ReportController;
 use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Accounting\JournalController;
@@ -8,11 +13,37 @@ use App\Http\Controllers\Admin\Accounting\AccountsController as AdminAccounts;
 use App\Http\Controllers\Admin\Accounting\JournalsController as AdminJournals;
 use App\Http\Controllers\Admin\Accounting\ReportsController as AdminReports;
 
-Route::get('/', fn()=> redirect('/admin'));
-Route::prefix('admin')->middleware(['web', EnsureRole::class.':admin,accountant'])->group(function () {
+Route::get('/', function () {
+    return Inertia::render('Welcome', [
+        'canLogin' => Route::has('login'),
+        'canRegister' => Route::has('register'),
+        'laravelVersion' => Application::VERSION,
+        'phpVersion' => PHP_VERSION,
+    ]);
+});
+
+Route::get('/dashboard', function () {
+    return Inertia::render('Dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+require __DIR__.'/auth.php';
+
+// Admin area protected by auth + role
+Route::prefix('admin')->middleware(['auth', EnsureRole::class.':admin,accountant'])->group(function () {
     // Admin landing: redirect to default report
-    Route::get('/', fn () => redirect()->route('reports.trial'))->name('admin.home');
-    // Admin Accounting routes (new)
+    Route::get('/', fn () => redirect()->route('admin.accounting.reports.trial-balance'))->name('admin.home');
+
+    // Old backup and simple journal endpoint (keep for compatibility)
+    Route::get('/settings/backup', [BackupController::class, 'download'])->name('settings.backup');
+    Route::post('/journal', [JournalController::class, 'store'])->name('journal.store');
+
+    // Admin Accounting routes
     Route::prefix('accounting')->name('admin.accounting.')->group(function(){
         // Accounts CRUD
         Route::get('/accounts', [AdminAccounts::class, 'index'])->name('accounts.index');
@@ -34,14 +65,4 @@ Route::prefix('admin')->middleware(['web', EnsureRole::class.':admin,accountant'
         Route::get('/reports/trial-balance.csv', [AdminReports::class, 'trialBalanceCsv'])->name('reports.trial-balance.csv');
         Route::get('/reports/ledger.csv', [AdminReports::class, 'ledgerCsv'])->name('reports.ledger.csv');
     });
-    Route::get('/reports/trial-balance', [ReportController::class, 'trialBalance'])->name('reports.trial');
-    Route::get('/reports/ledger', [ReportController::class, 'ledger'])->name('reports.ledger');
-    Route::get('/reports/pnl', [ReportController::class, 'pnl'])->name('reports.pnl');
-    Route::get('/reports/bs', [ReportController::class, 'balanceSheet'])->name('reports.bs');
-    Route::get('/reports/trial-balance.csv', [ReportController::class, 'trialCsv'])->name('reports.trial.csv');
-    Route::get('/reports/ledger.csv', [ReportController::class, 'ledgerCsv'])->name('reports.ledger.csv');
-    Route::get('/reports/pnl.csv', [ReportController::class, 'pnlCsv'])->name('reports.pnl.csv');
-    Route::get('/reports/bs.csv', [ReportController::class, 'bsCsv'])->name('reports.bs.csv');
-    Route::get('/settings/backup', [BackupController::class, 'download'])->name('settings.backup');
-    Route::post('/journal', [JournalController::class, 'store'])->name('journal.store');
 });

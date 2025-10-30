@@ -5,16 +5,21 @@ namespace App\Http\Controllers\Admin\Accounting;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class AccountsController extends Controller
 {
     public function index(Request $request)
     {
-        $q = Account::query();
-        if ($s = $request->query('q')) {
-            $q->where(fn($w)=>$w->where('code','like',"%$s%")->orWhere('name','like',"%$s%"));
+        // API: return JSON for XHR or API calls; otherwise render Inertia page
+        if ($request->wantsJson()) {
+            $q = Account::query();
+            if ($s = $request->query('q')) {
+                $q->where(fn($w)=>$w->where('code','like',"%$s%")->orWhere('name','like',"%$s%"));
+            }
+            return response()->json($q->orderBy('code')->paginate(20));
         }
-        return response()->json($q->orderBy('code')->paginate(20));
+        return Inertia::render('Admin/Accounting/Accounts/Index');
     }
 
     public function store(Request $request)
@@ -34,7 +39,10 @@ class AccountsController extends Controller
 
     public function edit(int $id)
     {
-        return response()->json(Account::findOrFail($id));
+        if (request()->wantsJson()) {
+            return response()->json(Account::findOrFail($id));
+        }
+        return Inertia::render('Admin/Accounting/Accounts/Edit', ['id'=>$id]);
     }
 
     public function update(Request $request, int $id)
