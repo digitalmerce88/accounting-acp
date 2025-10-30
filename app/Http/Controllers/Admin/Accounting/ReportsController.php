@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Domain\Accounting\Services\ReportPdfService;
+use App\Domain\Accounting\Services\SummaryReportService;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportsController extends Controller
@@ -21,6 +22,130 @@ class ReportsController extends Controller
             return response()->json(['data'=>$rows]);
         }
         return Inertia::render('Admin/Accounting/Reports/TrialBalance');
+    }
+
+    // S3 Reports
+    public function overview(Request $request)
+    {
+        $svc = new SummaryReportService();
+        $data = $svc->overview($request->all());
+        if ($request->wantsJson()) return response()->json($data);
+        return Inertia::render('Admin/Accounting/Reports/Overview', $data);
+    }
+
+    public function byCategory(Request $request)
+    {
+        $svc = new SummaryReportService();
+        $data = $svc->byCategory($request->all());
+        if ($request->wantsJson()) return response()->json($data);
+        return Inertia::render('Admin/Accounting/Reports/Category', $data);
+    }
+
+    public function taxPurchaseVat(Request $request)
+    {
+        $svc = new SummaryReportService();
+        $data = $svc->taxPurchaseVat($request->all());
+        if ($request->wantsJson()) return response()->json($data);
+        return Inertia::render('Admin/Accounting/Reports/TaxPurchase', $data);
+    }
+
+    public function taxSalesVat(Request $request)
+    {
+        $svc = new SummaryReportService();
+        $data = $svc->taxSalesVat($request->all());
+        if ($request->wantsJson()) return response()->json($data);
+        return Inertia::render('Admin/Accounting/Reports/TaxSales', $data);
+    }
+
+    public function whtSummary(Request $request)
+    {
+        $svc = new SummaryReportService();
+        $data = $svc->whtSummary($request->all());
+        if ($request->wantsJson()) return response()->json($data);
+        return Inertia::render('Admin/Accounting/Reports/WhtSummary', $data);
+    }
+
+    // CSV endpoints
+    public function overviewCsv(Request $request)
+    {
+        $svc = new SummaryReportService();
+        $data = $svc->overview($request->all());
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="overview.csv"',
+        ];
+        $callback = function() use ($data) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['เริ่ม','สิ้นสุด','รายรับ','รายจ่าย','กำไรสุทธิ']);
+            fputcsv($out, [$data['start'],$data['end'], $data['income'], $data['expense'], $data['net']]);
+            fclose($out);
+        };
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function byCategoryCsv(Request $request)
+    {
+        $svc = new SummaryReportService();
+        $data = $svc->byCategory($request->all());
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="by-category.csv"',
+        ];
+        $callback = function() use ($data) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['โค้ด','ชื่อบัญชี','ประเภท','จำนวน']);
+            foreach ($data['rows'] as $r) {
+                fputcsv($out, [$r['code'],$r['name'],$r['type'],$r['amount']]);
+            }
+            fclose($out);
+        };
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function taxPurchaseVatCsv(Request $request)
+    {
+        $svc = new SummaryReportService();
+        $data = $svc->taxPurchaseVat($request->all());
+        return $this->singleAmountCsv('purchase-vat.csv', 'ภาษีซื้อ', $data);
+    }
+
+    public function taxSalesVatCsv(Request $request)
+    {
+        $svc = new SummaryReportService();
+        $data = $svc->taxSalesVat($request->all());
+        return $this->singleAmountCsv('sales-vat.csv', 'ภาษีขาย', $data);
+    }
+
+    public function whtSummaryCsv(Request $request)
+    {
+        $svc = new SummaryReportService();
+        $data = $svc->whtSummary($request->all());
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="wht-summary.csv"',
+        ];
+        $callback = function() use ($data) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['เริ่ม','สิ้นสุด','WHT รับ','WHT จ่าย']);
+            fputcsv($out, [$data['start'],$data['end'],$data['wht_received'],$data['wht_payable']]);
+            fclose($out);
+        };
+        return response()->stream($callback, 200, $headers);
+    }
+
+    private function singleAmountCsv(string $filename, string $label, array $data)
+    {
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+        $callback = function() use ($data, $label) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['เริ่ม','สิ้นสุด',$label]);
+            fputcsv($out, [$data['start'],$data['end'],$data['amount']]);
+            fclose($out);
+        };
+        return response()->stream($callback, 200, $headers);
     }
 
     public function ledger(Request $request)

@@ -68,6 +68,20 @@ Route::prefix('admin')->middleware(['auth', EnsureRole::class.':admin,accountant
     Route::get('/reports/trial-balance.pdf', [AdminReports::class, 'trialBalancePdf'])->name('reports.trial-balance.pdf');
         Route::get('/reports/ledger.csv', [AdminReports::class, 'ledgerCsv'])->name('reports.ledger.csv');
     Route::get('/reports/ledger.pdf', [AdminReports::class, 'ledgerPdf'])->name('reports.ledger.pdf');
+
+        // S3 Summary Reports
+        Route::get('/reports/overview', [AdminReports::class, 'overview'])->name('reports.overview');
+        Route::get('/reports/by-category', [AdminReports::class, 'byCategory'])->name('reports.by-category');
+        Route::get('/reports/tax/purchase-vat', [AdminReports::class, 'taxPurchaseVat'])->name('reports.tax.purchase');
+        Route::get('/reports/tax/sales-vat', [AdminReports::class, 'taxSalesVat'])->name('reports.tax.sales');
+        Route::get('/reports/tax/wht-summary', [AdminReports::class, 'whtSummary'])->name('reports.tax.wht');
+
+        // CSV
+        Route::get('/reports/overview.csv', [AdminReports::class, 'overviewCsv'])->name('reports.overview.csv');
+        Route::get('/reports/by-category.csv', [AdminReports::class, 'byCategoryCsv'])->name('reports.by-category.csv');
+        Route::get('/reports/tax/purchase-vat.csv', [AdminReports::class, 'taxPurchaseVatCsv'])->name('reports.tax.purchase.csv');
+        Route::get('/reports/tax/sales-vat.csv', [AdminReports::class, 'taxSalesVatCsv'])->name('reports.tax.sales.csv');
+        Route::get('/reports/tax/wht-summary.csv', [AdminReports::class, 'whtSummaryCsv'])->name('reports.tax.wht.csv');
     });
 
     // Admin Users management (admin only)
