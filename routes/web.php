@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\Accounting\AccountsController as AdminAccounts;
 use App\Http\Controllers\Admin\Accounting\JournalsController as AdminJournals;
 use App\Http\Controllers\Admin\Accounting\ReportsController as AdminReports;
 use App\Http\Controllers\Admin\Accounting\CloseController as AdminClose;
+use App\Http\Controllers\Admin\Accounting\TransactionsController as AdminTransactions;
 use App\Http\Controllers\Admin\UsersController as AdminUsers;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
 
@@ -88,6 +89,15 @@ Route::prefix('admin')->middleware(['auth', EnsureRole::class.':admin,accountant
 
         // Close month
         Route::post('/close/month', [AdminClose::class, 'month'])->name('close.month');
+
+        // S2 Income / Expense
+        Route::get('/income', [AdminTransactions::class, 'index'])->defaults('kind','income')->name('income.index');
+        Route::get('/income/create', [AdminTransactions::class, 'create'])->defaults('kind','income')->name('income.create');
+        Route::post('/income', [AdminTransactions::class, 'store'])->defaults('kind','income')->name('income.store');
+
+        Route::get('/expense', [AdminTransactions::class, 'index'])->defaults('kind','expense')->name('expense.index');
+        Route::get('/expense/create', [AdminTransactions::class, 'create'])->defaults('kind','expense')->name('expense.create');
+        Route::post('/expense', [AdminTransactions::class, 'store'])->defaults('kind','expense')->name('expense.store');
     });
 
     // Admin Users management (admin only)

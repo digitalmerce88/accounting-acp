@@ -25,6 +25,8 @@
           <Link href="/admin" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin$') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">แดชบอร์ด</Link>
           <Link href="/admin/users" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/users') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ผู้ใช้</Link>
           <div class="pt-2 text-xs font-semibold text-gray-500">งานบัญชี</div>
+          <Link href="/admin/accounting/income" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/income') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">รายรับ</Link>
+          <Link href="/admin/accounting/expense" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/expense') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">รายจ่าย</Link>
           <Link href="/admin/accounting/accounts" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/accounts') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ผังบัญชี</Link>
           <Link href="/admin/accounting/journals" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/journals') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">บันทึกบัญชี</Link>
           <div class="pt-2 text-xs font-semibold text-gray-500">รายงาน</div>
