@@ -27,7 +27,7 @@
 
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
-import { usePage } from '@inertiajs/vue3'
+import { usePage, router } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 
 const p = usePage().props
@@ -41,29 +41,14 @@ function format(n){
 }
 
 const busy = ref(false)
-async function closeMonth(){
+function closeMonth(){
   if(!confirm('ยืนยันการปิดงวดเดือนนี้?')) return
   busy.value = true
-  try{
-    const today = new Date()
-    const payload = { year: today.getFullYear(), month: today.getMonth()+1 }
-    const res = await fetch('/admin/accounting/close/month', {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json', 'X-CSRF-TOKEN': csrf() },
-      body: JSON.stringify(payload)
-    })
-    if(!res.ok){
-      const t = await res.text(); alert('ปิดงวดไม่สำเร็จ: '+t)
-    } else {
-      alert('ปิดงวดสำเร็จ')
-    }
-  } finally {
-    busy.value = false
-  }
-}
-
-function csrf(){
-  const el = document.head.querySelector('meta[name="csrf-token"]')
-  return el ? el.getAttribute('content') : ''
+  const today = new Date()
+  const payload = { year: today.getFullYear(), month: today.getMonth()+1 }
+  router.post('/admin/accounting/close/month', payload, {
+    preserveScroll: true,
+    onFinish: () => { busy.value = false },
+  })
 }
 </script>

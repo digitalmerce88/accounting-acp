@@ -17,6 +17,6 @@ class CloseController extends Controller
         $bizId = (int) ($request->user()->business_id ?? 1); // basic single business default
         $entry = (new ClosingService())->closeMonth($bizId, (int)$data['year'], (int)$data['month']);
         if ($request->wantsJson()) return response()->json(['ok'=>true, 'entry_id'=>$entry->id]);
-        return back()->with('status', 'ปิดงวดเรียบร้อย');
+        return back()->with('success', 'ปิดงวดเรียบร้อย');
     }
 }
