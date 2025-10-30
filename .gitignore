@@ -22,3 +22,6 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+gc_pack.zip
+.gitignore
+_gc/pack.md
