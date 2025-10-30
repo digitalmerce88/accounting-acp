@@ -3,6 +3,7 @@
 namespace App\Domain\Accounting;
 
 use App\Models\{Account, JournalEntry, JournalLine, Category, Business};
+use Illuminate\Support\Facades\Log;
 
 class PostingService
 {
@@ -131,7 +132,7 @@ class PostingService
         $revenueId = $revenueId ?: $byCode($d['revenue_code']);
         $expenseId = $expenseId ?: $byCode($d['expense_code']);
 
-        return [
+        $mapped = [
             'cash' => $cashId,
             'revenue' => $revenueId,
             'expense' => $expenseId,
@@ -140,6 +141,32 @@ class PostingService
             'wht_receivable' => $byCode($d['wht_receivable_code']),
             'wht_payable' => $byCode($d['wht_payable_code']),
         ];
+
+        // If any account ids are missing, log and throw a descriptive exception
+        $missing = [];
+        foreach ($mapped as $key => $val) {
+            if (empty($val)) {
+                // find the configured code for nicer message
+                $codeKey = match($key) {
+                    'cash' => ($paymentMethod === 'cash' ? $d['cash_code'] : $d['bank_code']),
+                    'revenue' => $d['revenue_code'],
+                    'expense' => $d['expense_code'],
+                    'vat_receivable' => $d['vat_receivable_code'],
+                    'vat_payable' => $d['vat_payable_code'],
+                    'wht_receivable' => $d['wht_receivable_code'],
+                    'wht_payable' => $d['wht_payable_code'],
+                    default => null,
+                };
+                $missing[] = [$key => $codeKey];
+            }
+        }
+
+        if (!empty($missing)) {
+            Log::error('PostingService.resolveAccounts missing account ids', ['business_id' => $businessId, 'missing' => $missing]);
+            throw new \RuntimeException('Missing Chart of Accounts entries for: ' . json_encode($missing));
+        }
+
+        return $mapped;
     }
 
     private function line(JournalEntry $e, int $accountId, float $debit, float $credit): void
