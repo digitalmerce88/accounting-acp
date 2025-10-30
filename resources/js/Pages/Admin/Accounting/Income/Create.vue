@@ -1,7 +1,13 @@
 <template>
   <AdminLayout>
     <h1 class="text-xl font-semibold">บันทึกรายรับ</h1>
-    <form class="mt-4 space-y-3" @submit.prevent="submit">
+    <form
+      class="mt-4 space-y-3"
+      method="post"
+      action="/admin/accounting/income"
+      enctype="multipart/form-data"
+      @submit.prevent="submit"
+    >
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <label class="text-sm text-gray-600">วันที่</label>
@@ -72,7 +78,7 @@
       </div>
 
       <div class="pt-2">
-        <button :disabled="busy" class="px-4 py-2 bg-green-700 text-white rounded">
+        <button type="submit" :disabled="busy" class="px-4 py-2 bg-green-700 text-white rounded">
           {{ busy ? 'กำลังบันทึก...' : 'บันทึกรายรับ' }}
         </button>
       </div>
