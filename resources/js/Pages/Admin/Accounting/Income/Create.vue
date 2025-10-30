@@ -78,7 +78,7 @@
       </div>
     </form>
   </AdminLayout>
-  
+
 </template>
 
 <script setup>
