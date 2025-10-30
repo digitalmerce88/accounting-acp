@@ -43,6 +43,29 @@ Alternatively, use Makefile:
 - Default cache/queue in .env.example use `database` to reduce external deps; Redis can be enabled later if needed.
 - APP_TIMEZONE default set to Asia/Bangkok.
 
+## Thai UI Localization (2025-10-30)
+- Admin layout/navigation translated to Thai.
+- Admin pages translated to Thai:
+   - Dashboard, Users, Accounts, Journals (Index/Create/Show), Reports (Trial Balance, Ledger).
+- CSV export headers localized to Thai for Trial Balance and Ledger.
+- No behavioral changes; only labels and texts updated for clarity.
+
+### Thai Glossary (บัญชีพื้นฐาน)
+- Chart of Accounts → ผังบัญชี
+- Journal → บันทึกรายการ
+- Trial Balance → งบทดลอง
+- Ledger → สมุดบัญชีแยกประเภท
+- Account Code → เลขที่บัญชี
+- Account Name → ชื่อบัญชี
+- Type → ประเภท (สินทรัพย์ asset, หนี้สิน liability, ทุน equity, รายได้ income, ค่าใช้จ่าย expense)
+- Normal Balance → ธรรมชาติของบัญชี (เดบิต debit / เครดิต credit)
+- Debit → เดบิต (Dr)
+- Credit → เครดิต (Cr)
+- Balance → ยอดคงเหลือ
+- Memo → บันทึก
+- Entry No. → เลขที่รายการ
+- Apply Filters → ใช้งานตัวกรอง
+
 ## Admin Users Management
 - Admin can manage user roles at `/admin/users` (requires role: admin).
 - UI built with Inertia/Vue; toggle role checkboxes and click Save per user.
@@ -66,7 +89,7 @@ Alternatively, use Makefile:
 ## Verification (2025-10-30)
 - Database: migrate:fresh --seed => PASS
 - Tests: 39 passed, 0 failed => PASS
-- Build: Vite production build recently succeeded => PASS
+- Build: Vite production build succeeded => PASS
 
 ## Next Steps (optional)
 - Implement real PDF export in `ReportPdfService` (pin dompdf or alternative and wire controllers).

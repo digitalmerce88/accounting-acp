@@ -1,32 +1,32 @@
 <template>
   <AdminLayout>
     <div class="flex items-end justify-between gap-4">
-      <h1 class="text-xl font-semibold">Ledger</h1>
+  <h1 class="text-xl font-semibold">สมุดบัญชีแยกประเภท</h1>
       <div class="flex items-center gap-2 text-sm">
         <div>
-          <label class="block text-xs text-gray-600">Account</label>
+          <label class="block text-xs text-gray-600">บัญชี</label>
           <select v-model.number="account_id" class="border rounded px-2 py-1 min-w-64">
-            <option :value="null">Select account</option>
+            <option :value="null">เลือกบัญชี</option>
             <option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.code }} - {{ a.name }}</option>
           </select>
         </div>
         <div>
-          <label class="block text-xs text-gray-600">From</label>
+          <label class="block text-xs text-gray-600">ตั้งแต่วันที่</label>
           <input v-model="from" type="date" class="border rounded px-2 py-1" />
         </div>
         <div>
-          <label class="block text-xs text-gray-600">To</label>
+          <label class="block text-xs text-gray-600">ถึงวันที่</label>
           <input v-model="to" type="date" class="border rounded px-2 py-1" />
         </div>
-        <button @click="load" class="px-3 py-1 bg-blue-600 text-white rounded">Apply</button>
-        <a :href="csvHref" class="px-3 py-1 border rounded" :class="!account_id ? 'pointer-events-none opacity-50' : ''">Export CSV</a>
+  <button @click="load" class="px-3 py-1 bg-blue-600 text-white rounded">ใช้งานตัวกรอง</button>
+  <a :href="csvHref" class="px-3 py-1 border rounded" :class="!account_id ? 'pointer-events-none opacity-50' : ''">ส่งออก CSV</a>
       </div>
     </div>
 
     <div class="mt-4 overflow-x-auto">
       <table class="min-w-full border text-sm">
         <thead class="bg-gray-50">
-          <tr><th class="p-2 border text-left">Date</th><th class="p-2 border text-left">Entry</th><th class="p-2 border text-left">Memo</th><th class="p-2 border text-right">Dr</th><th class="p-2 border text-right">Cr</th><th class="p-2 border text-right">Balance</th></tr>
+          <tr><th class="p-2 border text-left">วันที่</th><th class="p-2 border text-left">เลขที่รายการ</th><th class="p-2 border text-left">บันทึก</th><th class="p-2 border text-right">เดบิต</th><th class="p-2 border text-right">เครดิต</th><th class="p-2 border text-right">ยอดคงเหลือ</th></tr>
         </thead>
         <tbody>
           <tr v-for="r in rows" :key="r[1]">
@@ -37,7 +37,7 @@
             <td class="p-2 border text-right">{{ money(r[4]) }}</td>
             <td class="p-2 border text-right">{{ money(r[5]) }}</td>
           </tr>
-          <tr v-if="rows.length===0"><td colspan="6" class="p-4 text-center text-gray-500">No data</td></tr>
+          <tr v-if="rows.length===0"><td colspan="6" class="p-4 text-center text-gray-500">ไม่มีข้อมูล</td></tr>
         </tbody>
       </table>
     </div>

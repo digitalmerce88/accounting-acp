@@ -1,18 +1,18 @@
 <template>
   <AdminLayout>
     <div class="flex items-center justify-between">
-      <h1 class="text-xl font-semibold">Users</h1>
+  <h1 class="text-xl font-semibold">ผู้ใช้</h1>
       <div v-if="flash.status" class="text-green-700 text-sm">{{ flash.status }}</div>
     </div>
 
-    <div class="mt-4 overflow-x-auto">
+    <div class="mt-4 overflow-x-auto" v-if="localUsers && localUsers.length">
       <table class="min-w-full border text-sm">
         <thead class="bg-gray-50">
           <tr>
-            <th class="p-2 text-left border">Name</th>
-            <th class="p-2 text-left border">Email</th>
-            <th class="p-2 text-left border">Roles</th>
-            <th class="p-2 text-left border">Actions</th>
+            <th class="p-2 text-left border">ชื่อ</th>
+            <th class="p-2 text-left border">อีเมล</th>
+            <th class="p-2 text-left border">สิทธิ์</th>
+            <th class="p-2 text-left border">การทำงาน</th>
           </tr>
         </thead>
         <tbody>
@@ -27,32 +27,36 @@
             </td>
             <td class="p-2 border">
               <button class="px-3 py-1 bg-blue-600 text-white rounded" @click="save(user)" :disabled="saving[user.id]">
-                {{ saving[user.id] ? 'Saving...' : 'Save' }}
+                {{ saving[user.id] ? 'กำลังบันทึก...' : 'บันทึก' }}
               </button>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
+    <div v-else class="mt-6 text-sm text-gray-600">ไม่พบผู้ใช้</div>
   </AdminLayout>
 </template>
 
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
-import { reactive, computed } from 'vue'
+import { reactive, computed, ref, watch } from 'vue'
 import { usePage } from '@inertiajs/vue3'
 
 const page = usePage()
-const props = page.props
-const users = computed(() => props.value.users || [])
-const roles = computed(() => props.value.roles || [])
-const flash = computed(() => props.value.flash || {})
+const users = computed(() => page.props.users || [])
+const roles = computed(() => page.props.roles || [])
+const flash = computed(() => page.props.flash || {})
 
 // Local state with role slugs array for easy v-model binding
-const localUsers = reactive(users.value.map(u => ({
-  ...u,
-  roleSlugs: (u.roles || []).map(r => r.slug)
-})))
+// Use a ref and watch so we populate/update when Inertia props arrive
+const localUsers = ref([])
+watch(users, (newUsers) => {
+  localUsers.value = (newUsers || []).map(u => ({
+    ...u,
+    roleSlugs: (u.roles || []).map(r => r.slug)
+  }))
+}, { immediate: true })
 
 const saving = reactive({})
 

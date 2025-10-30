@@ -52,4 +52,23 @@ class UsersController extends Controller
 
         return back()->with('status', 'Roles updated');
     }
+
+    /**
+     * Debug endpoint to return users and roles as JSON (bypasses Inertia)
+     * Protected by the same admin middleware in routes.
+     */
+    public function debugJson(Request $request)
+    {
+        $users = User::query()
+            ->with('roles:id,slug,name')
+            ->orderBy('id')
+            ->get(['id', 'name', 'email']);
+
+        $roles = Role::query()->orderBy('id')->get(['id', 'slug', 'name']);
+
+        return response()->json([
+            'users' => $users,
+            'roles' => $roles,
+        ]);
+    }
 }

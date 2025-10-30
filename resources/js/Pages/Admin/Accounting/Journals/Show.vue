@@ -1,22 +1,22 @@
 <template>
   <AdminLayout>
-    <h1 class="text-xl font-semibold">Journal #{{ id }}</h1>
-    <div v-if="loading" class="mt-2 text-sm text-gray-500">Loading...</div>
+  <h1 class="text-xl font-semibold">บันทึกรายการ #{{ id }}</h1>
+  <div v-if="loading" class="mt-2 text-sm text-gray-500">กำลังโหลด...</div>
     <div v-else class="mt-4 space-y-3">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <div class="text-xs text-gray-500">Date</div>
+          <div class="text-xs text-gray-500">วันที่</div>
           <div class="font-medium">{{ entry.date }}</div>
         </div>
         <div class="md:col-span-2">
-          <div class="text-xs text-gray-500">Memo</div>
+          <div class="text-xs text-gray-500">บันทึก</div>
           <div class="font-medium">{{ entry.memo }}</div>
         </div>
       </div>
       <div class="overflow-x-auto">
         <table class="min-w-full border text-sm">
           <thead class="bg-gray-50">
-            <tr><th class="p-2 border text-left">Account</th><th class="p-2 border text-right">Dr</th><th class="p-2 border text-right">Cr</th></tr>
+            <tr><th class="p-2 border text-left">บัญชี</th><th class="p-2 border text-right">เดบิต</th><th class="p-2 border text-right">เครดิต</th></tr>
           </thead>
           <tbody>
             <tr v-for="ln in lines" :key="ln.id">

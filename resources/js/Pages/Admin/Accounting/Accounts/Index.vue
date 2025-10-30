@@ -1,11 +1,11 @@
 <template>
   <AdminLayout>
     <div class="flex items-center justify-between">
-      <h1 class="text-xl font-semibold">Accounts</h1>
+  <h1 class="text-xl font-semibold">ผังบัญชี</h1>
       <div class="flex items-center gap-2">
-        <input v-model="q" @keyup.enter="refresh(1)" class="border rounded px-2 py-1 text-sm" placeholder="Search code or name" />
-        <button @click="refresh(1)" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Search</button>
-        <button @click="openCreate()" class="px-3 py-1 border rounded text-sm">New</button>
+  <input v-model="q" @keyup.enter="refresh(1)" class="border rounded px-2 py-1 text-sm" placeholder="ค้นหาเลขที่/ชื่อบัญชี" />
+  <button @click="refresh(1)" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">ค้นหา</button>
+  <button @click="openCreate()" class="px-3 py-1 border rounded text-sm">เพิ่มใหม่</button>
       </div>
     </div>
 
@@ -13,10 +13,10 @@
       <table class="min-w-full border text-sm">
         <thead class="bg-gray-50">
           <tr>
-            <th class="text-left p-2 border">Code</th>
-            <th class="text-left p-2 border">Name</th>
-            <th class="text-left p-2 border">Type</th>
-            <th class="text-left p-2 border">Normal</th>
+            <th class="text-left p-2 border">เลขที่บัญชี</th>
+            <th class="text-left p-2 border">ชื่อบัญชี</th>
+            <th class="text-left p-2 border">ประเภท</th>
+            <th class="text-left p-2 border">ธรรมชาติ</th>
             <th class="p-2 border">-</th>
           </tr>
         </thead>
@@ -24,38 +24,38 @@
           <tr v-for="acc in accounts" :key="acc.id" class="border-b hover:bg-gray-50">
             <td class="p-2 border font-mono">{{ acc.code }}</td>
             <td class="p-2 border">{{ acc.name }}</td>
-            <td class="p-2 border capitalize">{{ acc.type }}</td>
-            <td class="p-2 border capitalize">{{ acc.normal_balance }}</td>
+            <td class="p-2 border">{{ typeLabel(acc.type) }}</td>
+            <td class="p-2 border">{{ balanceLabel(acc.normal_balance) }}</td>
             <td class="p-2 border text-center">
-              <button class="text-blue-600 hover:underline" @click="openEdit(acc)">Edit</button>
+              <button class="text-blue-600 hover:underline" @click="openEdit(acc)">แก้ไข</button>
             </td>
           </tr>
           <tr v-if="!loading && accounts.length === 0">
-            <td colspan="5" class="p-4 text-center text-gray-500">No records</td>
+            <td colspan="5" class="p-4 text-center text-gray-500">ไม่มีข้อมูล</td>
           </tr>
         </tbody>
       </table>
     </div>
 
     <div class="mt-3 flex items-center justify-between text-sm">
-      <div class="text-gray-600">Page {{ meta.current_page }} of {{ meta.last_page }}</div>
+  <div class="text-gray-600">หน้า {{ meta.current_page }} จาก {{ meta.last_page }}</div>
       <div class="space-x-2">
-        <button class="px-3 py-1 border rounded disabled:opacity-50" :disabled="meta.current_page<=1" @click="refresh(meta.current_page-1)">Prev</button>
-        <button class="px-3 py-1 border rounded disabled:opacity-50" :disabled="meta.current_page>=meta.last_page" @click="refresh(meta.current_page+1)">Next</button>
+  <button class="px-3 py-1 border rounded disabled:opacity-50" :disabled="meta.current_page<=1" @click="refresh(meta.current_page-1)">ก่อนหน้า</button>
+  <button class="px-3 py-1 border rounded disabled:opacity-50" :disabled="meta.current_page>=meta.last_page" @click="refresh(meta.current_page+1)">ถัดไป</button>
       </div>
     </div>
 
     <!-- Create/Edit Modal -->
     <Modal :show="showModal" @close="closeModal">
       <div class="p-4">
-        <h2 class="text-lg font-semibold mb-3">{{ isEdit ? 'Edit Account' : 'New Account' }}</h2>
+  <h2 class="text-lg font-semibold mb-3">{{ isEdit ? 'แก้ไขบัญชี' : 'เพิ่มบัญชีใหม่' }}</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="block text-sm text-gray-700 mb-1">Code</label>
-            <input v-model="form.code" :disabled="isEdit" class="w-full border rounded px-2 py-1" placeholder="e.g. 130" />
+            <label class="block text-sm text-gray-700 mb-1">เลขที่บัญชี</label>
+            <input v-model="form.code" :disabled="isEdit" class="w-full border rounded px-2 py-1" placeholder="เช่น 130" />
           </div>
           <div>
-            <label class="block text-sm text-gray-700 mb-1">Type</label>
+            <label class="block text-sm text-gray-700 mb-1">ประเภท</label>
             <select v-model="form.type" class="w-full border rounded px-2 py-1">
               <option value="asset">asset</option>
               <option value="liability">liability</option>
@@ -65,26 +65,26 @@
             </select>
           </div>
           <div class="md:col-span-2">
-            <label class="block text-sm text-gray-700 mb-1">Name</label>
-            <input v-model="form.name" class="w-full border rounded px-2 py-1" placeholder="Account name" />
+            <label class="block text-sm text-gray-700 mb-1">ชื่อบัญชี</label>
+            <input v-model="form.name" class="w-full border rounded px-2 py-1" placeholder="ชื่อบัญชี" />
           </div>
           <div>
-            <label class="block text-sm text-gray-700 mb-1">Normal balance</label>
+            <label class="block text-sm text-gray-700 mb-1">ธรรมชาติของบัญชี</label>
             <select v-model="form.normal_balance" class="w-full border rounded px-2 py-1">
-              <option value="debit">debit</option>
-              <option value="credit">credit</option>
+              <option value="debit">เดบิต</option>
+              <option value="credit">เครดิต</option>
             </select>
           </div>
         </div>
         <div class="mt-4 flex items-center gap-2">
-          <button class="px-3 py-1 bg-blue-600 text-white rounded" @click="submit" :disabled="saving">{{ saving ? 'Saving...' : 'Save' }}</button>
-          <button class="px-3 py-1 border rounded" @click="closeModal">Cancel</button>
+          <button class="px-3 py-1 bg-blue-600 text-white rounded" @click="submit" :disabled="saving">{{ saving ? 'กำลังบันทึก...' : 'บันทึก' }}</button>
+          <button class="px-3 py-1 border rounded" @click="closeModal">ยกเลิก</button>
           <span v-if="error" class="text-red-600 text-sm">{{ error }}</span>
         </div>
       </div>
     </Modal>
   </AdminLayout>
-  
+
 </template>
 
 <script setup>
@@ -104,6 +104,19 @@ const saving = ref(false)
 const error = ref('')
 const editingId = ref(null)
 const form = ref({ code: '', name: '', type: 'asset', normal_balance: 'debit' })
+
+function typeLabel(t){
+  return ({
+    asset: 'สินทรัพย์',
+    liability: 'หนี้สิน',
+    equity: 'ทุน',
+    revenue: 'รายได้',
+    expense: 'ค่าใช้จ่าย'
+  }[t] || t)
+}
+function balanceLabel(b){
+  return ({ debit: 'เดบิต', credit: 'เครดิต' }[b] || b)
+}
 
 function openCreate(){
   isEdit.value = false

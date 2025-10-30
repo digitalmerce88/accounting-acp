@@ -65,12 +65,16 @@ Route::prefix('admin')->middleware(['auth', EnsureRole::class.':admin,accountant
         Route::get('/reports/trial-balance', [AdminReports::class, 'trialBalance'])->name('reports.trial-balance');
         Route::get('/reports/ledger', [AdminReports::class, 'ledger'])->name('reports.ledger');
         Route::get('/reports/trial-balance.csv', [AdminReports::class, 'trialBalanceCsv'])->name('reports.trial-balance.csv');
+    Route::get('/reports/trial-balance.pdf', [AdminReports::class, 'trialBalancePdf'])->name('reports.trial-balance.pdf');
         Route::get('/reports/ledger.csv', [AdminReports::class, 'ledgerCsv'])->name('reports.ledger.csv');
+    Route::get('/reports/ledger.pdf', [AdminReports::class, 'ledgerPdf'])->name('reports.ledger.pdf');
     });
 
     // Admin Users management (admin only)
     Route::middleware([EnsureRole::class.':admin'])->prefix('users')->name('admin.users.')->group(function () {
         Route::get('/', [AdminUsers::class, 'index'])->name('index');
         Route::patch('/{user}/roles', [AdminUsers::class, 'updateRoles'])->name('roles.update');
+        // Debug JSON endpoint to inspect server-side data while logged in as admin
+        Route::get('/data', [AdminUsers::class, 'debugJson'])->name('data');
     });
 });

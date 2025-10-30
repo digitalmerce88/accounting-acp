@@ -1,25 +1,25 @@
 <template>
   <AdminLayout>
     <div class="flex items-end justify-between gap-4">
-      <h1 class="text-xl font-semibold">Trial Balance</h1>
+  <h1 class="text-xl font-semibold">งบทดลอง</h1>
       <div class="flex items-center gap-2 text-sm">
         <div>
-          <label class="block text-xs text-gray-600">From</label>
+          <label class="block text-xs text-gray-600">ตั้งแต่วันที่</label>
           <input v-model="from" type="date" class="border rounded px-2 py-1" />
         </div>
         <div>
-          <label class="block text-xs text-gray-600">To</label>
+          <label class="block text-xs text-gray-600">ถึงวันที่</label>
           <input v-model="to" type="date" class="border rounded px-2 py-1" />
         </div>
-        <button @click="load" class="px-3 py-1 bg-blue-600 text-white rounded">Apply</button>
-        <a :href="csvHref" class="px-3 py-1 border rounded">Export CSV</a>
+  <button @click="load" class="px-3 py-1 bg-blue-600 text-white rounded">ใช้งานตัวกรอง</button>
+  <a :href="csvHref" class="px-3 py-1 border rounded">ส่งออก CSV</a>
       </div>
     </div>
 
     <div class="mt-4 overflow-x-auto">
       <table class="min-w-full border text-sm">
         <thead class="bg-gray-50">
-          <tr><th class="p-2 border text-left">Code</th><th class="p-2 border text-left">Name</th><th class="p-2 border text-right">DR</th><th class="p-2 border text-right">CR</th></tr>
+          <tr><th class="p-2 border text-left">เลขที่บัญชี</th><th class="p-2 border text-left">ชื่อบัญชี</th><th class="p-2 border text-right">เดบิต</th><th class="p-2 border text-right">เครดิต</th></tr>
         </thead>
         <tbody>
           <tr v-for="r in rows" :key="r[0]">
@@ -28,7 +28,7 @@
             <td class="p-2 border text-right">{{ money(r[3]) }}</td>
             <td class="p-2 border text-right">{{ money(r[4]) }}</td>
           </tr>
-          <tr v-if="rows.length===0"><td colspan="4" class="p-4 text-center text-gray-500">No data</td></tr>
+          <tr v-if="rows.length===0"><td colspan="4" class="p-4 text-center text-gray-500">ไม่มีข้อมูล</td></tr>
         </tbody>
       </table>
     </div>

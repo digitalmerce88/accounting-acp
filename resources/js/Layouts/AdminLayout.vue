@@ -6,13 +6,13 @@
         <div class="flex items-center gap-3">
           <Link href="/dashboard" class="font-semibold">ACP</Link>
           <span class="text-gray-400">/</span>
-          <span class="text-sm text-gray-600">Admin Panel</span>
+          <span class="text-sm text-gray-600">แผงผู้ดูแลระบบ</span>
         </div>
         <div class="flex items-center gap-4">
-          <Link href="/profile" class="text-sm text-gray-700 hover:text-gray-900">Profile</Link>
+          <Link href="/profile" class="text-sm text-gray-700 hover:text-gray-900">โปรไฟล์</Link>
           <form method="post" action="/logout">
             <input type="hidden" name="_token" :value="csrfToken" />
-            <button class="text-sm text-red-600 hover:text-red-700">Logout</button>
+            <button class="text-sm text-red-600 hover:text-red-700">ออกจากระบบ</button>
           </form>
         </div>
       </div>
@@ -22,14 +22,14 @@
       <!-- Sidebar -->
       <aside class="col-span-12 md:col-span-3 lg:col-span-2">
         <nav class="bg-white border rounded-md p-3 space-y-1">
-          <Link href="/admin" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin$') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">Dashboard</Link>
-          <Link href="/admin/users" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/users') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">Users</Link>
-          <div class="pt-2 text-xs font-semibold text-gray-500">Accounting</div>
-          <Link href="/admin/accounting/accounts" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/accounts') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">Accounts</Link>
-          <Link href="/admin/accounting/journals" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/journals') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">Journals</Link>
-          <div class="pt-2 text-xs font-semibold text-gray-500">Reports</div>
-          <Link href="/admin/accounting/reports/trial-balance" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/reports/trial-balance') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">Trial Balance</Link>
-          <Link href="/admin/accounting/reports/ledger" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/reports/ledger') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">Ledger</Link>
+          <Link href="/admin" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin$') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">แดชบอร์ด</Link>
+          <Link href="/admin/users" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/users') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ผู้ใช้</Link>
+          <div class="pt-2 text-xs font-semibold text-gray-500">งานบัญชี</div>
+          <Link href="/admin/accounting/accounts" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/accounts') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ผังบัญชี</Link>
+          <Link href="/admin/accounting/journals" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/journals') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">บันทึกบัญชี</Link>
+          <div class="pt-2 text-xs font-semibold text-gray-500">รายงาน</div>
+          <Link href="/admin/accounting/reports/trial-balance" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/reports/trial-balance') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">งบทดลอง</Link>
+          <Link href="/admin/accounting/reports/ledger" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/reports/ledger') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">สมุดบัญชีแยกประเภท</Link>
         </nav>
       </aside>
 
