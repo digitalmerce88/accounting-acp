@@ -29,6 +29,12 @@
         return Inertia::render('Dashboard');
     })->middleware(['auth', 'verified'])->name('dashboard');
 
+    // Lightweight debug route to test logging and request flow (no auth)
+    Route::get('/_debug/logtest', function () {
+        \Illuminate\Support\Facades\Log::info('debug/logtest hit', ['ts' => now()->toDateTimeString()]);
+        return response()->json(['ok' => true]);
+    });
+
     Route::middleware('auth')->group(function () {
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
