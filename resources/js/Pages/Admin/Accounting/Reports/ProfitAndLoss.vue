@@ -16,8 +16,11 @@
         <div :class="net >= 0 ? 'text-green-700' : 'text-red-700'" class="text-2xl font-semibold">{{ format(net) }}</div>
       </div>
     </div>
-    <div class="mt-4">
+    <div class="mt-4 flex items-center gap-3">
       <a href="/admin/accounting/reports/profit-and-loss.csv" class="px-3 py-1 bg-blue-600 text-white rounded">ดาวน์โหลด CSV</a>
+      <button class="px-3 py-1 bg-gray-800 text-white rounded" @click="closeMonth" :disabled="busy">
+        {{ busy ? 'กำลังปิดงวด...' : 'ปิดงวดเดือนนี้' }}
+      </button>
     </div>
   </AdminLayout>
 </template>
@@ -25,7 +28,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { usePage } from '@inertiajs/vue3'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const p = usePage().props
 const from = computed(()=> p.from)
@@ -35,5 +38,32 @@ const expense = computed(()=> p.expense || 0)
 const net = computed(()=> p.net || 0)
 function format(n){
   return new Intl.NumberFormat('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n||0)
+}
+
+const busy = ref(false)
+async function closeMonth(){
+  if(!confirm('ยืนยันการปิดงวดเดือนนี้?')) return
+  busy.value = true
+  try{
+    const today = new Date()
+    const payload = { year: today.getFullYear(), month: today.getMonth()+1 }
+    const res = await fetch('/admin/accounting/close/month', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'X-CSRF-TOKEN': csrf() },
+      body: JSON.stringify(payload)
+    })
+    if(!res.ok){
+      const t = await res.text(); alert('ปิดงวดไม่สำเร็จ: '+t)
+    } else {
+      alert('ปิดงวดสำเร็จ')
+    }
+  } finally {
+    busy.value = false
+  }
+}
+
+function csrf(){
+  const el = document.head.querySelector('meta[name="csrf-token"]')
+  return el ? el.getAttribute('content') : ''
 }
 </script>

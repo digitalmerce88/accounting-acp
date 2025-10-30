@@ -94,7 +94,6 @@ Route::prefix('admin')->middleware(['auth', EnsureRole::class.':admin,accountant
     Route::middleware([EnsureRole::class.':admin'])->prefix('users')->name('admin.users.')->group(function () {
         Route::get('/', [AdminUsers::class, 'index'])->name('index');
         Route::patch('/{user}/roles', [AdminUsers::class, 'updateRoles'])->name('roles.update');
-        // Debug JSON endpoint to inspect server-side data while logged in as admin
-        Route::get('/data', [AdminUsers::class, 'debugJson'])->name('data');
+    // Debug JSON endpoint removed
     });
 });

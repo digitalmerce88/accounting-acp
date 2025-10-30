@@ -28,6 +28,11 @@
           <Link href="/admin/accounting/accounts" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/accounts') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ผังบัญชี</Link>
           <Link href="/admin/accounting/journals" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/journals') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">บันทึกบัญชี</Link>
           <div class="pt-2 text-xs font-semibold text-gray-500">รายงาน</div>
+          <Link href="/admin/accounting/reports/overview" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/reports/overview') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ภาพรวม</Link>
+          <Link href="/admin/accounting/reports/by-category" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/reports/by-category') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ตามหมวด/บัญชี</Link>
+          <Link href="/admin/accounting/reports/tax/purchase-vat" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/reports/tax/purchase-vat') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ภาษีซื้อ</Link>
+          <Link href="/admin/accounting/reports/tax/sales-vat" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/reports/tax/sales-vat') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ภาษีขาย</Link>
+          <Link href="/admin/accounting/reports/profit-and-loss" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/reports/profit-and-loss') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">กำไรขาดทุน</Link>
           <Link href="/admin/accounting/reports/trial-balance" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/reports/trial-balance') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">งบทดลอง</Link>
           <Link href="/admin/accounting/reports/ledger" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/reports/ledger') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">สมุดบัญชีแยกประเภท</Link>
         </nav>
