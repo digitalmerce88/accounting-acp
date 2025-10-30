@@ -14,7 +14,11 @@ class JournalService {
         $entry = JournalEntry::findOrFail($entryId);
         $this->assertPeriodOpen($entry->date, $entry->business_id);
         if ($entry->status === 'posted') { throw new Exception('Entry already posted.'); }
-        return JournalLine::create([ 'entry_id'=>$entryId, 'account_id'=>$accountId, 'debit'=>$debit or 0, 'credit'=>$credit or 0 ]);
+        $debit = $debit ?: 0;
+        $credit = $credit ?: 0;
+        if ($debit < 0 || $credit < 0) { throw new Exception('Negative amount not allowed.'); }
+        if ($debit > 0 && $credit > 0) { throw new Exception('Line cannot have both debit and credit.'); }
+        return JournalLine::create([ 'entry_id'=>$entryId, 'account_id'=>$accountId, 'debit'=>$debit, 'credit'=>$credit ]);
     }
     public function post($entryId): JournalEntry {
         return DB::transaction(function() use ($entryId) {
@@ -22,7 +26,9 @@ class JournalService {
             $this->assertPeriodOpen($entry->date, $entry->business_id);
             $sum = JournalLine::where('entry_id',$entry->id)
                 ->selectRaw('ROUND(SUM(debit),2) as dr, ROUND(SUM(credit),2) as cr')->first();
-            if (round($sum->dr ?? 0,2) !== round($sum->cr ?? 0,2)) throw new Exception('Entry not balanced.');
+            if (round($sum->dr ?? 0,2) !== round($sum->cr ?? 0,2) || round($sum->dr ?? 0,2) <= 0) {
+                throw new Exception('Entry not balanced.');
+            }
             $entry->status = 'posted'; $entry->save(); return $entry;
         });
     }

@@ -8,7 +8,10 @@ return new class extends Migration {
             $t->id();
             $t->foreignId('business_id')->nullable()->constrained('businesses')->nullOnDelete();
             $t->string('code',50); $t->string('name',150);
-            $t->enum('type',['asset','liability','equity','income','expense'])->index();
+            $t->enum('type',[
+                'asset','liability','equity','revenue','expense'
+            ])->index();
+            $t->enum('normal_balance',['debit','credit'])->default('debit');
             $t->timestamps(); $t->unique(['business_id','code']);
         });
     }
