@@ -12,6 +12,7 @@ use App\Http\Middleware\EnsureRole;
 use App\Http\Controllers\Admin\Accounting\AccountsController as AdminAccounts;
 use App\Http\Controllers\Admin\Accounting\JournalsController as AdminJournals;
 use App\Http\Controllers\Admin\Accounting\ReportsController as AdminReports;
+use App\Http\Controllers\Admin\UsersController as AdminUsers;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -64,5 +65,11 @@ Route::prefix('admin')->middleware(['auth', EnsureRole::class.':admin,accountant
         Route::get('/reports/ledger', [AdminReports::class, 'ledger'])->name('reports.ledger');
         Route::get('/reports/trial-balance.csv', [AdminReports::class, 'trialBalanceCsv'])->name('reports.trial-balance.csv');
         Route::get('/reports/ledger.csv', [AdminReports::class, 'ledgerCsv'])->name('reports.ledger.csv');
+    });
+
+    // Admin Users management (admin only)
+    Route::middleware([EnsureRole::class.':admin'])->prefix('users')->name('admin.users.')->group(function () {
+        Route::get('/', [AdminUsers::class, 'index'])->name('index');
+        Route::patch('/{user}/roles', [AdminUsers::class, 'updateRoles'])->name('roles.update');
     });
 });

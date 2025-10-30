@@ -14,7 +14,7 @@ class ExampleTest extends TestCase
     {
         $response = $this->get('/');
 
-        // The application redirects '/' to '/admin'
-        $response->assertRedirect('/admin');
+        // The application renders the welcome page (Breeze/Inertia installed)
+        $response->assertStatus(200);
     }
 }
