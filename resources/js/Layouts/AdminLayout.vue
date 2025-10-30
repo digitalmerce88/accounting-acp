@@ -34,7 +34,12 @@
       </aside>
 
       <!-- Content -->
-      <main class="col-span-12 md:col-span-9 lg:col-span-10">
+      <main class="col-span-12 md:col-span-9 lg:col-span-10 space-y-3">
+        <!-- Flash banners -->
+        <div v-if="flash.error" class="p-3 border border-red-300 bg-red-50 text-red-700 rounded">{{ flash.error }}</div>
+        <div v-else-if="flash.success" class="p-3 border border-green-300 bg-green-50 text-green-700 rounded">{{ flash.success }}</div>
+        <div v-else-if="flash.status" class="p-3 border border-blue-300 bg-blue-50 text-blue-700 rounded">{{ flash.status }}</div>
+
         <div class="bg-white border rounded-md p-4">
           <slot />
         </div>
@@ -50,6 +55,7 @@ import { computed } from 'vue'
 
 const page = usePage()
 const url = computed(() => page.url || (page?.value?.url ?? '/'))
+const flash = computed(() => page.props.flash || {})
 const csrfToken = computed(() => {
   const el = document.head.querySelector('meta[name="csrf-token"]')
   return el ? el.getAttribute('content') : ''
