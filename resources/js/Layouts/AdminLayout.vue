@@ -37,6 +37,9 @@
           <Link href="/admin/accounting/reports/profit-and-loss" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/reports/profit-and-loss') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">กำไรขาดทุน</Link>
           <Link href="/admin/accounting/reports/trial-balance" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/reports/trial-balance') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">งบทดลอง</Link>
           <Link href="/admin/accounting/reports/ledger" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/reports/ledger') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">สมุดบัญชีแยกประเภท</Link>
+          <div class="pt-2 text-xs font-semibold text-gray-500">บุคคลและเงินเดือน</div>
+          <Link href="/admin/hr/employees" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/hr/employees') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">พนักงาน</Link>
+          <Link href="/admin/hr/payroll" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/hr/payroll') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">รอบเงินเดือน</Link>
         </nav>
       </aside>
 

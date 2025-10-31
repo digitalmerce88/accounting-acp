@@ -52,7 +52,7 @@
         Route::get('/settings/backup', [BackupController::class, 'download'])->name('settings.backup');
         Route::post('/journal', [JournalController::class, 'store'])->name('journal.store');
 
-        // Admin Accounting routes
+    // Admin Accounting routes
         Route::prefix('accounting')->name('admin.accounting.')->group(function () {
             // Accounts CRUD
             Route::get('/accounts', [AdminAccounts::class, 'index'])->name('accounts.index');
@@ -113,6 +113,20 @@
             Route::get('/expense/{id}/edit', [AdminTransactions::class, 'edit'])->defaults('kind', 'expense')->name('expense.edit');
             Route::put('/expense/{id}', [AdminTransactions::class, 'update'])->defaults('kind', 'expense')->name('expense.update');
             Route::delete('/expense/{id}', [AdminTransactions::class, 'destroy'])->defaults('kind', 'expense')->name('expense.destroy');
+        });
+
+        // Admin HR routes
+        Route::prefix('hr')->name('admin.hr.')->group(function () {
+            $emp = \App\Http\Controllers\Admin\HR\EmployeesController::class;
+            $pay = \App\Http\Controllers\Admin\HR\PayrollController::class;
+
+            Route::get('/employees', [$emp, 'index'])->name('employees.index');
+
+            Route::get('/payroll', [$pay, 'index'])->name('payroll.index');
+            Route::post('/payroll', [$pay, 'store'])->name('payroll.store');
+            Route::get('/payroll/{id}', [$pay, 'show'])->name('payroll.show');
+            Route::post('/payroll/{id}/lock', [$pay, 'lock'])->name('payroll.lock');
+            Route::post('/payroll/{id}/pay', [$pay, 'pay'])->name('payroll.pay');
         });
 
         // Admin Users management (admin only)
