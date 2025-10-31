@@ -261,6 +261,9 @@ class BillsController extends Controller
         ] : config('company');
         $pdf = Pdf::setOptions(['isHtml5ParserEnabled'=>true,'isRemoteEnabled'=>true])->loadView('documents.bill_pdf', [ 'bill' => $item, 'company' => $companyArr ]);
         $filename = 'bill-'.($item->number ?? $item->id).'.pdf';
-        return $pdf->download($filename);
+        if ($request->boolean('dl') || $request->boolean('download')) {
+            return $pdf->download($filename);
+        }
+        return $pdf->stream($filename, ['Attachment' => false]);
     }
 }

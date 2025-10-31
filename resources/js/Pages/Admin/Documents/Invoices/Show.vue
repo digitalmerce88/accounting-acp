@@ -3,7 +3,8 @@
     <div class="flex items-center justify-between">
       <h1 class="text-xl font-semibold">Invoice {{ item.number || item.id }}</h1>
       <div class="flex gap-2">
-        <a :href="`/admin/documents/invoices/${item.id}/pdf`" class="px-3 py-1 border rounded">พิมพ์ PDF</a>
+  <a :href="`/admin/documents/invoices/${item.id}/pdf`" target="_blank" rel="noopener" class="px-3 py-1 border rounded">ดูตัวอย่าง PDF</a>
+  <a :href="`/admin/documents/invoices/${item.id}/pdf?dl=1`" class="px-3 py-1 border rounded">ดาวน์โหลด</a>
         <a v-if="item.status!=='paid'" :href="`/admin/documents/invoices/${item.id}/edit`" class="px-3 py-1 border rounded">แก้ไข</a>
         <button v-if="item.status!=='paid'" @click="onDelete" class="px-3 py-1 bg-red-600 text-white rounded">ลบ</button>
         <button v-if="item.status!=='paid'" @click="pay" class="px-3 py-1 bg-blue-700 text-white rounded">รับชำระ</button>

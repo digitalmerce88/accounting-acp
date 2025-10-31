@@ -267,6 +267,9 @@ class InvoicesController extends Controller
         ] : config('company');
         $pdf = Pdf::setOptions(['isHtml5ParserEnabled'=>true,'isRemoteEnabled'=>true])->loadView('documents.invoice_pdf', [ 'inv' => $item, 'company' => $companyArr ]);
         $filename = 'invoice-'.($item->number ?? $item->id).'.pdf';
-        return $pdf->download($filename);
+        if ($request->boolean('dl') || $request->boolean('download')) {
+            return $pdf->download($filename);
+        }
+        return $pdf->stream($filename, ['Attachment' => false]);
     }
 }
