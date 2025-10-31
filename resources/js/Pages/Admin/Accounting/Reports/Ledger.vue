@@ -5,9 +5,9 @@
       <div class="flex items-center gap-2 text-sm">
         <div>
           <label class="block text-xs text-gray-600">บัญชี</label>
-          <select v-model.number="account_id" class="border rounded px-2 py-1 min-w-64">
-            <option :value="null">เลือกบัญชี</option>
-            <option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.code }} - {{ a.name }}</option>
+          <select v-model="account_id" class="border rounded px-2 py-1 min-w-64">
+            <option value="">ทั้งหมด</option>
+            <option v-for="a in accounts" :key="a.id" :value="String(a.id)">{{ a.code }} - {{ a.name }}</option>
           </select>
         </div>
         <div>
@@ -19,7 +19,7 @@
           <input v-model="to" type="date" class="border rounded px-2 py-1" />
         </div>
   <button @click="load" class="px-3 py-1 bg-blue-600 text-white rounded">ใช้งานตัวกรอง</button>
-  <a :href="csvHref" class="px-3 py-1 border rounded" :class="!account_id ? 'pointer-events-none opacity-50' : ''">ส่งออก CSV</a>
+  <a :href="csvHref" class="px-3 py-1 border rounded">ส่งออก CSV</a>
       </div>
     </div>
 
@@ -48,7 +48,7 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
-const account_id = ref(null)
+const account_id = ref('')
 const from = ref('')
 const to = ref('')
 const rows = ref([])
@@ -60,7 +60,7 @@ async function loadAccounts(){
   accounts.value = res.data.data || []
 }
 const load = async ()=>{
-  const res = await axios.get('/admin/accounting/reports/ledger', { params: { account_id: account_id.value, from: from.value||undefined, to: to.value||undefined }, headers:{ Accept: 'application/json' } })
+  const res = await axios.get('/admin/accounting/reports/ledger', { params: { account_id: account_id.value || undefined, from: from.value||undefined, to: to.value||undefined }, headers:{ Accept: 'application/json' } })
   rows.value = res.data.data || res.data
 }
 const money = (n)=> Number(n||0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })

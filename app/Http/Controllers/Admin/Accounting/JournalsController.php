@@ -29,6 +29,16 @@ class JournalsController extends Controller
         return Inertia::render('Admin/Accounting/Journals/Create');
     }
 
+    public function edit(int $id)
+    {
+        if (request()->wantsJson()) {
+            $e = JournalEntry::findOrFail($id);
+            $lines = JournalLine::where('entry_id',$id)->orderBy('id')->get();
+            return response()->json(['entry'=>$e,'lines'=>$lines]);
+        }
+        return Inertia::render('Admin/Accounting/Journals/Edit', ['id'=>$id]);
+    }
+
     public function store(Request $request, JournalService $svc)
     {
         $data = $request->validate([
@@ -50,15 +60,40 @@ class JournalsController extends Controller
             } catch (Exception $ex) {
                 throw $ex;
             }
-            $entry = JournalEntry::with('id')->find($posted->id);
+            // Return the posted entry; no need to eager-load a non-existent relation
+            $entry = JournalEntry::find($posted->id);
             return response()->json($entry, 201);
+        });
+    }
+
+    public function update(int $id, Request $request, JournalService $svc)
+    {
+        $data = $request->validate([
+            'date' => ['required','date'],
+            'memo' => ['nullable','string'],
+            'lines' => ['required','array','min:2'],
+            'lines.*.account_id' => ['required','integer'],
+            'lines.*.debit' => ['nullable','numeric','min:0'],
+            'lines.*.credit' => ['nullable','numeric','min:0'],
+        ]);
+        return DB::transaction(function() use ($svc, $id, $data) {
+            $e = JournalEntry::lockForUpdate()->findOrFail($id);
+            // reset to draft and replace lines
+            $e->update(['date'=>$data['date'], 'memo'=>$data['memo'] ?? null, 'status'=>'draft']);
+            JournalLine::where('entry_id',$e->id)->delete();
+            foreach ($data['lines'] as $ln) {
+                $svc->upsertLine($e->id, $ln['account_id'], $ln['debit'] ?? 0, $ln['credit'] ?? 0);
+            }
+            $posted = $svc->post($e->id);
+            return response()->json(['id'=>$posted->id], 200);
         });
     }
 
     public function show(int $id)
     {
         if (request()->wantsJson()) {
-            $e = JournalEntry::with(['id'])->findOrFail($id);
+            // Load entry only; lines are fetched separately below
+            $e = JournalEntry::findOrFail($id);
             $lines = JournalLine::where('entry_id',$id)->orderBy('id')->get();
             return response()->json(['entry'=>$e,'lines'=>$lines]);
         }

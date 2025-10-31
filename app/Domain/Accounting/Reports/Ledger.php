@@ -7,8 +7,10 @@ class Ledger {
             ->join('journal_entries as e','e.id','=','journal_lines.entry_id')
             ->selectRaw('e.date, e.id as entry_id, e.memo, journal_lines.debit, journal_lines.credit')
             ->where('e.status','posted')
-            ->where('journal_lines.account_id', $accountId)
             ->orderBy('e.date')->orderBy('e.id');
+        if ($accountId) {
+            $q->where('journal_lines.account_id', $accountId);
+        }
         if ($from) $q->where('e.date','>=',$from);
         if ($to) $q->where('e.date','<=',$to);
         $rows = $q->get(); $bal=0.0; $out=[];

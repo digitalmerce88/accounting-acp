@@ -19,7 +19,11 @@
             <td class="p-2 border">{{ j.date }}</td>
             <td class="p-2 border">{{ j.memo }}</td>
             <td class="p-2 border">
-              <button class="text-red-600 hover:underline" @click="del(j)">ลบ</button>
+              <div class="flex items-center gap-3">
+                <a :href="`/admin/accounting/journals/${j.id}`" class="text-blue-700 hover:underline">ดู</a>
+                <a :href="`/admin/accounting/journals/${j.id}/edit`" class="text-gray-700 hover:underline">แก้ไข</a>
+                <button class="text-red-600 hover:underline" @click="del(j)">ลบ</button>
+              </div>
             </td>
           </tr>
           <tr v-if="!loading && journals.length===0">

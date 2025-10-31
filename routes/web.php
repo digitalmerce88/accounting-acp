@@ -65,6 +65,8 @@
             Route::get('/journals', [AdminJournals::class, 'index'])->name('journals.index');
             Route::get('/journals/create', [AdminJournals::class, 'create'])->name('journals.create');
             Route::post('/journals', [AdminJournals::class, 'store'])->name('journals.store');
+            Route::get('/journals/{id}/edit', [AdminJournals::class, 'edit'])->name('journals.edit');
+            Route::put('/journals/{id}', [AdminJournals::class, 'update'])->name('journals.update');
             Route::get('/journals/{id}', [AdminJournals::class, 'show'])->name('journals.show');
             Route::delete('/journals/{id}', [AdminJournals::class, 'destroy'])->name('journals.destroy');
 
@@ -99,10 +101,18 @@
             Route::get('/income', [AdminTransactions::class, 'index'])->defaults('kind', 'income')->name('income.index');
             Route::get('/income/create', [AdminTransactions::class, 'create'])->defaults('kind', 'income')->name('income.create');
             Route::post('/income', [AdminTransactions::class, 'store'])->defaults('kind', 'income')->name('income.store');
+            Route::get('/income/{id}', [AdminTransactions::class, 'show'])->defaults('kind', 'income')->name('income.show');
+            Route::get('/income/{id}/edit', [AdminTransactions::class, 'edit'])->defaults('kind', 'income')->name('income.edit');
+            Route::put('/income/{id}', [AdminTransactions::class, 'update'])->defaults('kind', 'income')->name('income.update');
+            Route::delete('/income/{id}', [AdminTransactions::class, 'destroy'])->defaults('kind', 'income')->name('income.destroy');
 
             Route::get('/expense', [AdminTransactions::class, 'index'])->defaults('kind', 'expense')->name('expense.index');
             Route::get('/expense/create', [AdminTransactions::class, 'create'])->defaults('kind', 'expense')->name('expense.create');
             Route::post('/expense', [AdminTransactions::class, 'store'])->defaults('kind', 'expense')->name('expense.store');
+            Route::get('/expense/{id}', [AdminTransactions::class, 'show'])->defaults('kind', 'expense')->name('expense.show');
+            Route::get('/expense/{id}/edit', [AdminTransactions::class, 'edit'])->defaults('kind', 'expense')->name('expense.edit');
+            Route::put('/expense/{id}', [AdminTransactions::class, 'update'])->defaults('kind', 'expense')->name('expense.update');
+            Route::delete('/expense/{id}', [AdminTransactions::class, 'destroy'])->defaults('kind', 'expense')->name('expense.destroy');
         });
 
         // Admin Users management (admin only)
