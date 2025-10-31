@@ -4,7 +4,9 @@
       <h1 class="text-xl font-semibold">รอบเงินเดือน {{ run.period_year }}-{{ String(run.period_month).padStart(2,'0') }}</h1>
       <div class="flex gap-2">
         <button v-if="run.status==='draft'" @click="lock()" class="px-3 py-1 bg-yellow-600 text-white rounded">ล็อก</button>
+        <button v-if="run.status==='draft'" @click="del()" class="px-3 py-1 bg-red-700 text-white rounded">ลบ</button>
         <button v-if="run.status==='locked'" @click="pay()" class="px-3 py-1 bg-blue-700 text-white rounded">จ่าย</button>
+        <button v-if="run.status==='locked'" @click="unlock()" class="px-3 py-1 bg-orange-600 text-white rounded">ปลดล็อค</button>
       </div>
     </div>
 
@@ -47,4 +49,6 @@ const items = computed(()=> usePage().props.items || [])
 function fmt(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) }
 function lock(){ if(confirm('ล็อกรอบนี้?')) router.post(`/admin/hr/payroll/${run.value.id}/lock`) }
 function pay(){ if(confirm('จ่ายเงินเดือนรอบนี้?')) router.post(`/admin/hr/payroll/${run.value.id}/pay`, { date: new Date().toISOString().slice(0,10) }) }
+function unlock(){ if(confirm('ปลดล็อครอบนี้?')) router.post(`/admin/hr/payroll/${run.value.id}/unlock`) }
+function del(){ if(confirm('ลบรอบนี้? จะลบรายการพนักงานในรอบด้วย')) router.delete(`/admin/hr/payroll/${run.value.id}`) }
 </script>

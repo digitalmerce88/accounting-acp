@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\{PayrollRun, PayrollItem, Employee};
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
 
 class PayrollController extends Controller
 {
@@ -53,11 +54,35 @@ class PayrollController extends Controller
         return back()->with('success', 'ล็อกรอบเงินเดือนแล้ว');
     }
 
+    public function unlock(Request $request, int $id)
+    {
+        $run = PayrollRun::findOrFail($id);
+        if ($run->status !== 'locked') {
+            return back()->with('error', 'ปลดล็อคได้เฉพาะรอบที่ถูกล็อค');
+        }
+        $run->status = 'draft';
+        $run->save();
+        return back()->with('success', 'ปลดล็อครอบเงินเดือนแล้ว');
+    }
+
     public function pay(Request $request, int $id, PayrollService $svc)
     {
         $date = $request->validate(['date' => ['nullable','date']]);
         $bizId = (int) ($request->user()->business_id ?? 1);
         $svc->pay($id, $bizId, $date['date'] ?? now()->toDateString());
         return back()->with('success', 'จ่ายเงินเดือนเรียบร้อย');
+    }
+
+    public function destroy(Request $request, int $id)
+    {
+        $run = PayrollRun::with('items')->findOrFail($id);
+        if ($run->status !== 'draft') {
+            return back()->with('error', 'ลบได้เฉพาะรอบที่เป็น draft');
+        }
+        DB::transaction(function() use ($run) {
+            PayrollItem::where('payroll_run_id', $run->id)->delete();
+            $run->delete();
+        });
+        return redirect()->route('admin.hr.payroll.index')->with('success', 'ลบรอบเงินเดือนแล้ว');
     }
 }

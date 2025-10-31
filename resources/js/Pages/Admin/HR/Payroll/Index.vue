@@ -26,7 +26,9 @@
               <div class="flex gap-2">
                 <a :href="`/admin/hr/payroll/${r.id}`" class="px-2 py-0.5 text-xs bg-gray-100 border rounded">ดู</a>
                 <button v-if="r.status==='draft'" @click="lock(r.id)" class="px-2 py-0.5 text-xs bg-yellow-600 text-white rounded">ล็อก</button>
+                <button v-if="r.status==='draft'" @click="del(r.id)" class="px-2 py-0.5 text-xs bg-red-700 text-white rounded">ลบ</button>
                 <button v-if="r.status==='locked'" @click="pay(r.id)" class="px-2 py-0.5 text-xs bg-blue-700 text-white rounded">จ่าย</button>
+                <button v-if="r.status==='locked'" @click="unlock(r.id)" class="px-2 py-0.5 text-xs bg-orange-600 text-white rounded">ปลดล็อค</button>
               </div>
             </td>
           </tr>
@@ -53,4 +55,6 @@ function createRun(){
 }
 function lock(id){ if(confirm('ล็อกรอบนี้?')) router.post(`/admin/hr/payroll/${id}/lock`) }
 function pay(id){ if(confirm('จ่ายเงินเดือนรอบนี้?')) router.post(`/admin/hr/payroll/${id}/pay`, { date: today }) }
+function unlock(id){ if(confirm('ปลดล็อครอบนี้?')) router.post(`/admin/hr/payroll/${id}/unlock`) }
+function del(id){ if(confirm('ลบรอบนี้? จะลบรายการพนักงานในรอบด้วย')) router.delete(`/admin/hr/payroll/${id}`) }
 </script>

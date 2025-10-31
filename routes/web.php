@@ -133,7 +133,9 @@
             Route::post('/payroll', [$pay, 'store'])->name('payroll.store');
             Route::get('/payroll/{id}', [$pay, 'show'])->name('payroll.show');
             Route::post('/payroll/{id}/lock', [$pay, 'lock'])->name('payroll.lock');
+            Route::post('/payroll/{id}/unlock', [$pay, 'unlock'])->name('payroll.unlock');
             Route::post('/payroll/{id}/pay', [$pay, 'pay'])->name('payroll.pay');
+            Route::delete('/payroll/{id}', [$pay, 'destroy'])->name('payroll.destroy');
         });
 
         // Admin Users management (admin only)
