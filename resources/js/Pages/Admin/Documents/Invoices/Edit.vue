@@ -16,13 +16,24 @@
             <label class="block text-gray-600 mb-1">ชื่อ</label>
             <input v-model="form.customer.name" type="text" class="w-full border rounded p-2" placeholder="ชื่อบริษัท/บุคคล" />
           </div>
+          <div class="md:col-span-3">
+            <label class="block text-gray-600 mb-1">ระบุอย่างใดอย่างหนึ่ง</label>
+            <div class="flex items-center gap-4 text-sm">
+              <label class="inline-flex items-center gap-2">
+                <input type="radio" value="tax" v-model="idChoice" /> <span>เลขผู้เสียภาษี</span>
+              </label>
+              <label class="inline-flex items-center gap-2">
+                <input type="radio" value="national" v-model="idChoice" /> <span>เลขบัตรประชาชน</span>
+              </label>
+            </div>
+          </div>
           <div>
             <label class="block text-gray-600 mb-1">เลขผู้เสียภาษี</label>
-            <input v-model="form.customer.tax_id" type="text" class="w-full border rounded p-2" />
+            <input :disabled="idChoice!=='tax'" v-model="form.customer.tax_id" type="text" class="w-full border rounded p-2 disabled:bg-gray-100" />
           </div>
           <div>
             <label class="block text-gray-600 mb-1">เลขบัตรประชาชน</label>
-            <input v-model="form.customer.national_id" type="text" class="w-full border rounded p-2" />
+            <input :disabled="idChoice!=='national'" v-model="form.customer.national_id" type="text" class="w-full border rounded p-2 disabled:bg-gray-100" />
           </div>
           <div>
             <label class="block text-gray-600 mb-1">โทรศัพท์</label>
@@ -101,7 +112,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { usePage, router } from '@inertiajs/vue3'
-import { reactive, computed, ref } from 'vue'
+import { reactive, computed, ref, watch } from 'vue'
 const item = usePage().props.item
 const form = reactive({
   id: item.id,
@@ -114,6 +125,11 @@ const form = reactive({
 })
 const customerQuery = ref('')
 const processing = ref(false)
+const idChoice = ref((item.customer?.tax_id ? 'tax' : (item.customer?.national_id ? 'national' : 'tax')))
+watch(idChoice, (v)=>{
+  if(v==='tax'){ form.customer.national_id = '' }
+  else { form.customer.tax_id = '' }
+})
 const subtotal = computed(()=> form.items.reduce((s,it)=> s + (Number(it.qty_decimal||0)*Number(it.unit_price_decimal||0)), 0))
 const vat = computed(()=> form.items.reduce((s,it)=> s + (Number(it.qty_decimal||0)*Number(it.unit_price_decimal||0)) * (Number(it.vat_rate_decimal||0)/100), 0))
 const total = computed(()=> subtotal.value + vat.value)
@@ -140,6 +156,10 @@ async function searchCustomer(){
 }
 function submit(){
   processing.value = true
+  const t = (form.customer.tax_id||'').trim()
+  const n = (form.customer.national_id||'').trim()
+  if(!t && !n){ processing.value = false; alert('กรุณากรอก เลขผู้เสียภาษี หรือ เลขบัตรประชาชน อย่างใดอย่างหนึ่ง'); return }
+  if(t && n){ processing.value = false; alert('กรุณากรอกเพียงอย่างใดอย่างหนึ่ง ไม่ต้องกรอกทั้งสองช่อง'); return }
   router.put(`/admin/documents/invoices/${form.id}`, form, { onFinish(){ processing.value = false } })
 }
 </script>
