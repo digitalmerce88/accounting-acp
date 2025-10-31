@@ -19,4 +19,5 @@ class Bill extends Model
     ];
 
     public function items() { return $this->hasMany(BillItem::class); }
+    public function vendor() { return $this->belongsTo(Vendor::class); }
 }

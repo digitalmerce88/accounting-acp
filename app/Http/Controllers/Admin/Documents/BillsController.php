@@ -32,6 +32,13 @@ class BillsController extends Controller
             'due_date' => ['nullable','date'],
             'number' => ['nullable','string','max:50'],
             'vendor_id' => ['nullable','integer'],
+            'vendor' => ['nullable','array'],
+            'vendor.name' => ['nullable','string','max:200'],
+            'vendor.tax_id' => ['nullable','string','max:30'],
+            'vendor.national_id' => ['nullable','string','max:30'],
+            'vendor.phone' => ['nullable','string','max:30'],
+            'vendor.email' => ['nullable','string','max:120'],
+            'vendor.address' => ['nullable','string','max:500'],
             'wht_rate_decimal' => ['nullable','numeric','min:0'],
             'wht_amount_decimal' => ['nullable','numeric','min:0'],
             'note' => ['nullable','string','max:500'],
@@ -60,6 +67,32 @@ class BillsController extends Controller
             'total' => round($subtotal + $vat, 2),
             'status' => 'draft',
         ]));
+        // resolve or create vendor
+        if (empty($data['vendor_id']) && !empty($data['vendor'])) {
+            $v = $data['vendor'];
+            $existing = null;
+            if (!empty($v['tax_id']) || !empty($v['national_id']) || !empty($v['phone'])) {
+                $existing = \App\Models\Vendor::where('business_id',$bizId)
+                    ->when(!empty($v['tax_id']), fn($q)=>$q->orWhere('tax_id',$v['tax_id']))
+                    ->when(!empty($v['national_id']), fn($q)=>$q->orWhere('national_id',$v['national_id']))
+                    ->when(!empty($v['phone']), fn($q)=>$q->orWhere('phone',$v['phone']))
+                    ->first();
+            }
+            if ($existing) {
+                $bill->vendor_id = $existing->id;
+            } elseif (!empty($v['name'])) {
+                $created = \App\Models\Vendor::create([
+                    'business_id' => $bizId,
+                    'name' => $v['name'],
+                    'tax_id' => $v['tax_id'] ?? null,
+                    'national_id' => $v['national_id'] ?? null,
+                    'phone' => $v['phone'] ?? null,
+                    'email' => $v['email'] ?? null,
+                    'address' => $v['address'] ?? null,
+                ]);
+                $bill->vendor_id = $created->id;
+            }
+        }
         if (empty($bill->number)) {
             $ym = date('Ym', strtotime($bill->bill_date));
             $prefix = 'BILL-' . $ym . '-';
@@ -87,14 +120,14 @@ class BillsController extends Controller
     public function show(Request $request, int $id)
     {
         $bizId = (int) ($request->user()->business_id ?? 1);
-        $item = Bill::where('business_id',$bizId)->with('items')->findOrFail($id);
+        $item = Bill::where('business_id',$bizId)->with(['items','vendor'])->findOrFail($id);
         return Inertia::render('Admin/Documents/Bills/Show', ['item'=>$item]);
     }
 
     public function edit(Request $request, int $id)
     {
         $bizId = (int) ($request->user()->business_id ?? 1);
-        $item = Bill::where('business_id',$bizId)->with('items')->findOrFail($id);
+        $item = Bill::where('business_id',$bizId)->with(['items','vendor'])->findOrFail($id);
         if (in_array($item->status, ['paid','void'])) {
             return redirect()->back()->with('error','ไม่สามารถแก้ไขเอกสารที่จ่ายแล้ว/ยกเลิกแล้ว');
         }
@@ -104,7 +137,7 @@ class BillsController extends Controller
     public function update(Request $request, int $id)
     {
         $bizId = (int) ($request->user()->business_id ?? 1);
-        $bill = Bill::where('business_id',$bizId)->with('items')->findOrFail($id);
+        $bill = Bill::where('business_id',$bizId)->with(['items','vendor'])->findOrFail($id);
         if (in_array($bill->status, ['paid','void'])) {
             return redirect()->back()->with('error','ไม่สามารถแก้ไขเอกสารที่จ่ายแล้ว/ยกเลิกแล้ว');
         }
@@ -139,6 +172,32 @@ class BillsController extends Controller
             'total' => round($subtotal + $vat, 2),
         ]));
         $bill->save();
+
+        if (!empty($data['vendor'])) {
+            $v = $data['vendor'];
+            if (!empty($bill->vendor_id)) {
+                $bill->vendor->fill([
+                    'name' => $v['name'] ?? $bill->vendor->name,
+                    'tax_id' => $v['tax_id'] ?? $bill->vendor->tax_id,
+                    'national_id' => $v['national_id'] ?? $bill->vendor->national_id,
+                    'phone' => $v['phone'] ?? $bill->vendor->phone,
+                    'email' => $v['email'] ?? $bill->vendor->email,
+                    'address' => $v['address'] ?? $bill->vendor->address,
+                ])->save();
+            } elseif (!empty($v['name'])) {
+                $created = \App\Models\Vendor::create([
+                    'business_id' => $bizId,
+                    'name' => $v['name'],
+                    'tax_id' => $v['tax_id'] ?? null,
+                    'national_id' => $v['national_id'] ?? null,
+                    'phone' => $v['phone'] ?? null,
+                    'email' => $v['email'] ?? null,
+                    'address' => $v['address'] ?? null,
+                ]);
+                $bill->vendor_id = $created->id;
+                $bill->save();
+            }
+        }
 
         BillItem::where('bill_id', $bill->id)->delete();
         foreach ($items as $it) {
@@ -178,7 +237,7 @@ class BillsController extends Controller
     {
         $bizId = (int) ($request->user()->business_id ?? 1);
         $item = Bill::where('business_id',$bizId)->with('items')->findOrFail($id);
-        $pdf = Pdf::loadView('documents.bill_pdf', [ 'bill' => $item ]);
+        $pdf = Pdf::setOptions(['isHtml5ParserEnabled'=>true,'isRemoteEnabled'=>true])->loadView('documents.bill_pdf', [ 'bill' => $item ]);
         $filename = 'bill-'.($item->number ?? $item->id).'.pdf';
         return $pdf->download($filename);
     }

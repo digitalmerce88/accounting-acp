@@ -2,6 +2,38 @@
   <AdminLayout>
     <h1 class="text-xl font-semibold mb-4">สร้างใบแจ้งหนี้</h1>
     <form @submit.prevent="submit" class="space-y-4 text-sm">
+      <div class="p-3 border rounded">
+        <div class="font-medium mb-2">ข้อมูลผู้รับเอกสาร (ลูกค้า)</div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="md:col-span-2">
+            <label class="block text-gray-600 mb-1">ค้นหาจาก เลขผู้เสียภาษี / เลขบัตรประชาชน / เบอร์โทร</label>
+            <div class="flex gap-2">
+              <input v-model="customerQuery" type="text" class="w-full border rounded p-2" placeholder="ระบุค่าหนึ่งค่า แล้วกดค้นหา" />
+              <button type="button" @click="searchCustomer" class="px-3 py-1 border rounded">ค้นหา</button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-gray-600 mb-1">ชื่อ</label>
+            <input v-model="form.customer.name" type="text" class="w-full border rounded p-2" placeholder="ชื่อบริษัท/บุคคล" />
+          </div>
+          <div>
+            <label class="block text-gray-600 mb-1">เลขผู้เสียภาษี</label>
+            <input v-model="form.customer.tax_id" type="text" class="w-full border rounded p-2" />
+          </div>
+          <div>
+            <label class="block text-gray-600 mb-1">เลขบัตรประชาชน</label>
+            <input v-model="form.customer.national_id" type="text" class="w-full border rounded p-2" />
+          </div>
+          <div>
+            <label class="block text-gray-600 mb-1">โทรศัพท์</label>
+            <input v-model="form.customer.phone" type="text" class="w-full border rounded p-2" />
+          </div>
+          <div class="md:col-span-3">
+            <label class="block text-gray-600 mb-1">ที่อยู่</label>
+            <textarea v-model="form.customer.address" rows="2" class="w-full border rounded p-2"></textarea>
+          </div>
+        </div>
+      </div>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label class="block text-gray-600 mb-1">วันที่ออก</label>
@@ -76,8 +108,10 @@ const form = reactive({
   due_date: '',
   number: '',
   is_tax_invoice: false,
+  customer: { name: '', tax_id: '', national_id: '', phone: '', address: '' },
   items: [ { name: '', qty_decimal: 1, unit_price_decimal: 0, vat_rate_decimal: 0 } ],
 })
+const customerQuery = ref('')
 const processing = ref(false)
 
 const subtotal = computed(()=> form.items.reduce((s,it)=> s + (Number(it.qty_decimal||0)*Number(it.unit_price_decimal||0)), 0))
@@ -87,6 +121,25 @@ const total = computed(()=> subtotal.value + vat.value)
 function addItem(){ form.items.push({ name: '', qty_decimal: 1, unit_price_decimal: 0, vat_rate_decimal: 0 }) }
 function removeItem(i){ form.items.splice(i,1) }
 function fmt(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) }
+
+async function searchCustomer(){
+  if(!customerQuery.value) return
+  try{
+    const res = await fetch(`/admin/documents/customers/search?q=${encodeURIComponent(customerQuery.value)}`)
+    const data = await res.json()
+    if(data && data.found){
+      const c = data.item
+      form.customer.name = c.name || ''
+      form.customer.tax_id = c.tax_id || ''
+      form.customer.national_id = c.national_id || ''
+      form.customer.phone = c.phone || ''
+      form.customer.address = c.address || ''
+      alert('พบข้อมูลและกรอกให้แล้ว')
+    }else{
+      alert('ไม่พบข้อมูล สามารถกรอกสร้างใหม่ได้')
+    }
+  }catch(e){ console.error(e) }
+}
 
 function submit(){
   processing.value = true

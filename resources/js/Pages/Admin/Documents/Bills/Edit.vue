@@ -2,6 +2,38 @@
   <AdminLayout>
     <h1 class="text-xl font-semibold mb-4">แก้ไขบิล {{ form.number || form.id }}</h1>
     <form @submit.prevent="submit" class="space-y-4 text-sm">
+      <div class="p-3 border rounded">
+        <div class="font-medium mb-2">ผู้ขาย/ผู้รับเงิน (Vendor)</div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="md:col-span-2">
+            <label class="block text-gray-600 mb-1">ค้นหาจาก เลขผู้เสียภาษี / เลขบัตรประชาชน / เบอร์โทร</label>
+            <div class="flex gap-2">
+              <input v-model="vendorQuery" type="text" class="w-full border rounded p-2" placeholder="ระบุค่าหนึ่งค่า แล้วกดค้นหา" />
+              <button type="button" @click="searchVendor" class="px-3 py-1 border rounded">ค้นหา</button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-gray-600 mb-1">ชื่อ</label>
+            <input v-model="form.vendor.name" type="text" class="w-full border rounded p-2" placeholder="ชื่อบริษัท/บุคคล" />
+          </div>
+          <div>
+            <label class="block text-gray-600 mb-1">เลขผู้เสียภาษี</label>
+            <input v-model="form.vendor.tax_id" type="text" class="w-full border rounded p-2" />
+          </div>
+          <div>
+            <label class="block text-gray-600 mb-1">เลขบัตรประชาชน</label>
+            <input v-model="form.vendor.national_id" type="text" class="w-full border rounded p-2" />
+          </div>
+          <div>
+            <label class="block text-gray-600 mb-1">โทรศัพท์</label>
+            <input v-model="form.vendor.phone" type="text" class="w-full border rounded p-2" />
+          </div>
+          <div class="md:col-span-3">
+            <label class="block text-gray-600 mb-1">ที่อยู่</label>
+            <textarea v-model="form.vendor.address" rows="2" class="w-full border rounded p-2"></textarea>
+          </div>
+        </div>
+      </div>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label class="block text-gray-600 mb-1">วันที่บิล</label>
@@ -77,8 +109,10 @@ const form = reactive({
   due_date: item.due_date,
   number: item.number,
   wht_rate_decimal: Number(item.wht_rate_decimal||0),
+  vendor: { name: item.vendor?.name||'', tax_id: item.vendor?.tax_id||'', national_id: item.vendor?.national_id||'', phone: item.vendor?.phone||'', address: item.vendor?.address||'' },
   items: item.items?.map(it=>({ name: it.name, qty_decimal: Number(it.qty_decimal), unit_price_decimal: Number(it.unit_price_decimal), vat_rate_decimal: Number(it.vat_rate_decimal)})) || []
 })
+const vendorQuery = ref('')
 const processing = ref(false)
 const subtotal = computed(()=> form.items.reduce((s,it)=> s + (Number(it.qty_decimal||0)*Number(it.unit_price_decimal||0)), 0))
 const vat = computed(()=> form.items.reduce((s,it)=> s + (Number(it.qty_decimal||0)*Number(it.unit_price_decimal||0)) * (Number(it.vat_rate_decimal||0)/100), 0))
@@ -86,5 +120,23 @@ const total = computed(()=> subtotal.value + vat.value)
 function addItem(){ form.items.push({ name: '', qty_decimal: 1, unit_price_decimal: 0, vat_rate_decimal: 0 }) }
 function removeItem(i){ form.items.splice(i,1) }
 function fmt(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) }
+async function searchVendor(){
+  if(!vendorQuery.value) return
+  try{
+    const res = await fetch(`/admin/documents/vendors/search?q=${encodeURIComponent(vendorQuery.value)}`)
+    const data = await res.json()
+    if(data && data.found){
+      const v = data.item
+      form.vendor.name = v.name || ''
+      form.vendor.tax_id = v.tax_id || ''
+      form.vendor.national_id = v.national_id || ''
+      form.vendor.phone = v.phone || ''
+      form.vendor.address = v.address || ''
+      alert('พบข้อมูลและกรอกให้แล้ว')
+    }else{
+      alert('ไม่พบข้อมูล สามารถกรอกสร้างใหม่ได้')
+    }
+  }catch(e){ console.error(e) }
+}
 function submit(){ processing.value = true; router.put(`/admin/documents/bills/${form.id}`, form, { onFinish(){ processing.value = false } }) }
 </script>

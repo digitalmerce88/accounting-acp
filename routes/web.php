@@ -142,6 +142,8 @@
         Route::prefix('documents')->name('admin.documents.')->group(function () {
             $inv = \App\Http\Controllers\Admin\Documents\InvoicesController::class;
             $bill = \App\Http\Controllers\Admin\Documents\BillsController::class;
+            $cus = \App\Http\Controllers\Admin\Documents\CustomersController::class;
+            $ven = \App\Http\Controllers\Admin\Documents\VendorsController::class;
 
             Route::get('/invoices', [$inv,'index'])->name('invoices.index');
             Route::get('/invoices/create', [$inv,'create'])->name('invoices.create');
@@ -153,6 +155,9 @@
             Route::delete('/invoices/{id}', [$inv,'destroy'])->name('invoices.destroy');
             Route::post('/invoices/{id}/pay', [$inv,'pay'])->name('invoices.pay');
 
+            // customers quick search
+            Route::get('/customers/search', [$cus,'search'])->name('customers.search');
+
             Route::get('/bills', [$bill,'index'])->name('bills.index');
             Route::get('/bills/create', [$bill,'create'])->name('bills.create');
             Route::post('/bills', [$bill,'store'])->name('bills.store');
@@ -162,6 +167,9 @@
             Route::put('/bills/{id}', [$bill,'update'])->name('bills.update');
             Route::delete('/bills/{id}', [$bill,'destroy'])->name('bills.destroy');
             Route::post('/bills/{id}/pay', [$bill,'pay'])->name('bills.pay');
+
+            // vendors quick search
+            Route::get('/vendors/search', [$ven,'search'])->name('vendors.search');
         });
 
         // Admin Users management (admin only)

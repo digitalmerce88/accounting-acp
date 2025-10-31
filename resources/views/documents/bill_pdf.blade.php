@@ -3,17 +3,45 @@
 <head>
   <meta charset="utf-8"/>
   <style>
-    body { font-family: DejaVu Sans, sans-serif; font-size: 12px; }
+    /* Thai font embedding: place TTF at public/fonts/THSarabunNew.ttf */
+    @font-face {
+      font-family: 'THSarabunNew';
+      src: url('{{ public_path('fonts/THSarabunNew.ttf') }}') format('truetype');
+      font-weight: normal; font-style: normal;
+    }
+    body { font-family: THSarabunNew, DejaVu Sans, sans-serif; font-size: 14px; }
     h1 { font-size: 18px; margin: 0 0 10px; }
     table { width: 100%; border-collapse: collapse; }
     th, td { border: 1px solid #444; padding: 6px; }
     th { background: #f2f2f2; }
     .right { text-align: right; }
+    .muted { color: #666; }
+    .header { margin-bottom: 10px; }
   </style>
 </head>
 <body>
-  <h1>ใบวางบิล / Supplier Bill</h1>
-  <div>เลขที่: {{ $bill->number ?? $bill->id }} | วันที่: {{ $bill->bill_date?->format('Y-m-d') }}</div>
+  <div class="header">
+    <h1>ใบวางบิล / Supplier Bill</h1>
+    @php($company = config('company'))
+    <table style="border:0;">
+      <tr>
+        <td style="border:0; width:60%; vertical-align:top;">
+          <div><strong>{{ $company['name'] }}</strong></div>
+          <div class="muted">เลขผู้เสียภาษี: {{ $company['tax_id'] }}</div>
+          <div class="muted">{{ $company['address']['line1'] ?? '' }} {{ $company['address']['line2'] ?? '' }} {{ $company['address']['province'] ?? '' }} {{ $company['address']['postcode'] ?? '' }}</div>
+          <div class="muted">โทร: {{ $company['phone'] }} | อีเมล: {{ $company['email'] }}</div>
+        </td>
+        <td style="border:0; width:40%; vertical-align:top;">
+          <div><strong>ผู้ขาย/ผู้รับเงิน</strong></div>
+          <div>{{ $bill->vendor->name ?? '-' }}</div>
+          <div class="muted">เลขผู้เสียภาษี/บัตรประชาชน: {{ $bill->vendor->tax_id ?? $bill->vendor->national_id ?? '-' }}</div>
+          <div class="muted">โทร: {{ $bill->vendor->phone ?? '-' }}</div>
+          <div class="muted">ที่อยู่: {{ $bill->vendor->address ?? '-' }}</div>
+        </td>
+      </tr>
+    </table>
+    <div>เลขที่: {{ $bill->number ?? $bill->id }} | วันที่: {{ $bill->bill_date?->format('Y-m-d') }}</div>
+  </div>
   <br/>
   <table>
     <thead>

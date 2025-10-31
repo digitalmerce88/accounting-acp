@@ -33,6 +33,13 @@ class InvoicesController extends Controller
             'number' => ['nullable','string','max:50'],
             'is_tax_invoice' => ['nullable','boolean'],
             'customer_id' => ['nullable','integer'],
+            'customer' => ['nullable','array'],
+            'customer.name' => ['nullable','string','max:200'],
+            'customer.tax_id' => ['nullable','string','max:30'],
+            'customer.national_id' => ['nullable','string','max:30'],
+            'customer.phone' => ['nullable','string','max:30'],
+            'customer.email' => ['nullable','string','max:120'],
+            'customer.address' => ['nullable','string','max:500'],
             'note' => ['nullable','string','max:500'],
             'items' => ['required','array','min:1'],
             'items.*.name' => ['required','string','max:200'],
@@ -63,6 +70,32 @@ class InvoicesController extends Controller
             'total' => round($subtotal + $vat, 2),
             'status' => 'draft',
         ]));
+        // resolve or create customer
+        if (empty($data['customer_id']) && !empty($data['customer'])) {
+            $c = $data['customer'];
+            $existing = null;
+            if (!empty($c['tax_id']) || !empty($c['national_id']) || !empty($c['phone'])) {
+                $existing = \App\Models\Customer::where('business_id',$bizId)
+                    ->when(!empty($c['tax_id']), fn($q)=>$q->orWhere('tax_id',$c['tax_id']))
+                    ->when(!empty($c['national_id']), fn($q)=>$q->orWhere('national_id',$c['national_id']))
+                    ->when(!empty($c['phone']), fn($q)=>$q->orWhere('phone',$c['phone']))
+                    ->first();
+            }
+            if ($existing) {
+                $inv->customer_id = $existing->id;
+            } elseif (!empty($c['name'])) {
+                $created = \App\Models\Customer::create([
+                    'business_id' => $bizId,
+                    'name' => $c['name'],
+                    'tax_id' => $c['tax_id'] ?? null,
+                    'national_id' => $c['national_id'] ?? null,
+                    'phone' => $c['phone'] ?? null,
+                    'email' => $c['email'] ?? null,
+                    'address' => $c['address'] ?? null,
+                ]);
+                $inv->customer_id = $created->id;
+            }
+        }
         // basic auto numbering if not provided: INV-YYYYMM-#### per business per month
         if (empty($inv->number)) {
             $ym = date('Ym', strtotime($inv->issue_date));
@@ -91,14 +124,14 @@ class InvoicesController extends Controller
     public function show(Request $request, int $id)
     {
         $bizId = (int) ($request->user()->business_id ?? 1);
-        $item = Invoice::where('business_id',$bizId)->with('items')->findOrFail($id);
+        $item = Invoice::where('business_id',$bizId)->with(['items','customer'])->findOrFail($id);
         return Inertia::render('Admin/Documents/Invoices/Show', ['item'=>$item]);
     }
 
     public function edit(Request $request, int $id)
     {
         $bizId = (int) ($request->user()->business_id ?? 1);
-        $item = Invoice::where('business_id',$bizId)->with('items')->findOrFail($id);
+        $item = Invoice::where('business_id',$bizId)->with(['items','customer'])->findOrFail($id);
         if (in_array($item->status, ['paid','void'])) {
             return redirect()->back()->with('error','ไม่สามารถแก้ไขเอกสารที่ชำระแล้ว/ยกเลิกแล้ว');
         }
@@ -108,7 +141,7 @@ class InvoicesController extends Controller
     public function update(Request $request, int $id)
     {
         $bizId = (int) ($request->user()->business_id ?? 1);
-        $inv = Invoice::where('business_id',$bizId)->with('items')->findOrFail($id);
+        $inv = Invoice::where('business_id',$bizId)->with(['items','customer'])->findOrFail($id);
         if (in_array($inv->status, ['paid','void'])) {
             return redirect()->back()->with('error','ไม่สามารถแก้ไขเอกสารที่ชำระแล้ว/ยกเลิกแล้ว');
         }
@@ -143,6 +176,33 @@ class InvoicesController extends Controller
             'total' => round($subtotal + $vat, 2),
         ]));
         $inv->save();
+
+        // update or set customer
+        if (!empty($data['customer'])) {
+            $c = $data['customer'];
+            if (!empty($inv->customer_id)) {
+                $inv->customer->fill([
+                    'name' => $c['name'] ?? $inv->customer->name,
+                    'tax_id' => $c['tax_id'] ?? $inv->customer->tax_id,
+                    'national_id' => $c['national_id'] ?? $inv->customer->national_id,
+                    'phone' => $c['phone'] ?? $inv->customer->phone,
+                    'email' => $c['email'] ?? $inv->customer->email,
+                    'address' => $c['address'] ?? $inv->customer->address,
+                ])->save();
+            } elseif (!empty($c['name'])) {
+                $created = \App\Models\Customer::create([
+                    'business_id' => $bizId,
+                    'name' => $c['name'],
+                    'tax_id' => $c['tax_id'] ?? null,
+                    'national_id' => $c['national_id'] ?? null,
+                    'phone' => $c['phone'] ?? null,
+                    'email' => $c['email'] ?? null,
+                    'address' => $c['address'] ?? null,
+                ]);
+                $inv->customer_id = $created->id;
+                $inv->save();
+            }
+        }
 
         // replace items
         InvoiceItem::where('invoice_id', $inv->id)->delete();
@@ -183,7 +243,7 @@ class InvoicesController extends Controller
     {
         $bizId = (int) ($request->user()->business_id ?? 1);
         $item = Invoice::where('business_id',$bizId)->with('items')->findOrFail($id);
-        $pdf = Pdf::loadView('documents.invoice_pdf', [ 'inv' => $item ]);
+        $pdf = Pdf::setOptions(['isHtml5ParserEnabled'=>true,'isRemoteEnabled'=>true])->loadView('documents.invoice_pdf', [ 'inv' => $item ]);
         $filename = 'invoice-'.($item->number ?? $item->id).'.pdf';
         return $pdf->download($filename);
     }
