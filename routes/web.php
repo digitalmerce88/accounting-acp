@@ -121,6 +121,13 @@
             $pay = \App\Http\Controllers\Admin\HR\PayrollController::class;
 
             Route::get('/employees', [$emp, 'index'])->name('employees.index');
+            Route::get('/employees/create', [$emp, 'create'])->name('employees.create');
+            Route::post('/employees', [$emp, 'store'])->name('employees.store');
+            Route::get('/employees/{id}', [$emp, 'show'])->name('employees.show');
+            Route::get('/employees/{id}/edit', [$emp, 'edit'])->name('employees.edit');
+            Route::put('/employees/{id}', [$emp, 'update'])->name('employees.update');
+            Route::delete('/employees/{id}', [$emp, 'destroy'])->name('employees.destroy');
+            Route::post('/employees/{id}/restore', [$emp, 'restore'])->name('employees.restore');
 
             Route::get('/payroll', [$pay, 'index'])->name('payroll.index');
             Route::post('/payroll', [$pay, 'store'])->name('payroll.store');
