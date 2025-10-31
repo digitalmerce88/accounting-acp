@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Bill;
+use App\Models\BillItem;
 use App\Domain\Documents\PurchaseService;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class BillsController extends Controller
 {
@@ -17,11 +19,151 @@ class BillsController extends Controller
         return Inertia::render('Admin/Documents/Bills/Index', ['rows'=>$rows]);
     }
 
+    public function create(Request $request)
+    {
+        return Inertia::render('Admin/Documents/Bills/Create');
+    }
+
+    public function store(Request $request)
+    {
+        $bizId = (int) ($request->user()->business_id ?? 1);
+        $data = $request->validate([
+            'bill_date' => ['required','date'],
+            'due_date' => ['nullable','date'],
+            'number' => ['nullable','string','max:50'],
+            'vendor_id' => ['nullable','integer'],
+            'wht_rate_decimal' => ['nullable','numeric','min:0'],
+            'wht_amount_decimal' => ['nullable','numeric','min:0'],
+            'note' => ['nullable','string','max:500'],
+            'items' => ['required','array','min:1'],
+            'items.*.name' => ['required','string','max:200'],
+            'items.*.qty_decimal' => ['required','numeric','min:0'],
+            'items.*.unit_price_decimal' => ['required','numeric','min:0'],
+            'items.*.vat_rate_decimal' => ['nullable','numeric','min:0'],
+        ]);
+
+        $items = $data['items'];
+        unset($data['items']);
+
+        $subtotal = 0.0; $vat = 0.0;
+        foreach ($items as $it) {
+            $line = (float)$it['qty_decimal'] * (float)$it['unit_price_decimal'];
+            $subtotal += $line;
+            $vat += $line * ((float)($it['vat_rate_decimal'] ?? 0) / 100.0);
+        }
+
+        $bill = new Bill();
+        $bill->fill(array_merge($data, [
+            'business_id' => $bizId,
+            'subtotal' => round($subtotal, 2),
+            'vat_decimal' => round($vat, 2),
+            'total' => round($subtotal + $vat, 2),
+            'status' => 'draft',
+        ]));
+        if (empty($bill->number)) {
+            $ym = date('Ym', strtotime($bill->bill_date));
+            $prefix = 'BILL-' . $ym . '-';
+            $seq = Bill::where('business_id', $bizId)
+                ->whereYear('bill_date', date('Y', strtotime($bill->bill_date)))
+                ->whereMonth('bill_date', date('n', strtotime($bill->bill_date)))
+                ->count() + 1;
+            $bill->number = $prefix . str_pad((string)$seq, 4, '0', STR_PAD_LEFT);
+        }
+        $bill->save();
+
+        foreach ($items as $it) {
+            BillItem::create([
+                'bill_id' => $bill->id,
+                'name' => $it['name'],
+                'qty_decimal' => $it['qty_decimal'],
+                'unit_price_decimal' => $it['unit_price_decimal'],
+                'vat_rate_decimal' => $it['vat_rate_decimal'] ?? 0,
+            ]);
+        }
+
+        return redirect()->route('admin.documents.bills.show', $bill->id)->with('success','สร้างบิลแล้ว');
+    }
+
     public function show(Request $request, int $id)
     {
         $bizId = (int) ($request->user()->business_id ?? 1);
         $item = Bill::where('business_id',$bizId)->with('items')->findOrFail($id);
         return Inertia::render('Admin/Documents/Bills/Show', ['item'=>$item]);
+    }
+
+    public function edit(Request $request, int $id)
+    {
+        $bizId = (int) ($request->user()->business_id ?? 1);
+        $item = Bill::where('business_id',$bizId)->with('items')->findOrFail($id);
+        if (in_array($item->status, ['paid','void'])) {
+            return redirect()->back()->with('error','ไม่สามารถแก้ไขเอกสารที่จ่ายแล้ว/ยกเลิกแล้ว');
+        }
+        return Inertia::render('Admin/Documents/Bills/Edit', ['item'=>$item]);
+    }
+
+    public function update(Request $request, int $id)
+    {
+        $bizId = (int) ($request->user()->business_id ?? 1);
+        $bill = Bill::where('business_id',$bizId)->with('items')->findOrFail($id);
+        if (in_array($bill->status, ['paid','void'])) {
+            return redirect()->back()->with('error','ไม่สามารถแก้ไขเอกสารที่จ่ายแล้ว/ยกเลิกแล้ว');
+        }
+
+        $data = $request->validate([
+            'bill_date' => ['required','date'],
+            'due_date' => ['nullable','date'],
+            'number' => ['nullable','string','max:50'],
+            'vendor_id' => ['nullable','integer'],
+            'wht_rate_decimal' => ['nullable','numeric','min:0'],
+            'wht_amount_decimal' => ['nullable','numeric','min:0'],
+            'note' => ['nullable','string','max:500'],
+            'items' => ['required','array','min:1'],
+            'items.*.name' => ['required','string','max:200'],
+            'items.*.qty_decimal' => ['required','numeric','min:0'],
+            'items.*.unit_price_decimal' => ['required','numeric','min:0'],
+            'items.*.vat_rate_decimal' => ['nullable','numeric','min:0'],
+        ]);
+        $items = $data['items'];
+        unset($data['items']);
+
+        $subtotal = 0.0; $vat = 0.0;
+        foreach ($items as $it) {
+            $line = (float)$it['qty_decimal'] * (float)$it['unit_price_decimal'];
+            $subtotal += $line;
+            $vat += $line * ((float)($it['vat_rate_decimal'] ?? 0) / 100.0);
+        }
+
+        $bill->fill(array_merge($data, [
+            'subtotal' => round($subtotal, 2),
+            'vat_decimal' => round($vat, 2),
+            'total' => round($subtotal + $vat, 2),
+        ]));
+        $bill->save();
+
+        BillItem::where('bill_id', $bill->id)->delete();
+        foreach ($items as $it) {
+            BillItem::create([
+                'bill_id' => $bill->id,
+                'name' => $it['name'],
+                'qty_decimal' => $it['qty_decimal'],
+                'unit_price_decimal' => $it['unit_price_decimal'],
+                'vat_rate_decimal' => $it['vat_rate_decimal'] ?? 0,
+            ]);
+        }
+
+        return redirect()->route('admin.documents.bills.show', $bill->id)->with('success','บันทึกการแก้ไขแล้ว');
+    }
+
+    public function destroy(Request $request, int $id)
+    {
+        $bizId = (int) ($request->user()->business_id ?? 1);
+        $bill = Bill::where('business_id',$bizId)->findOrFail($id);
+        if ($bill->status !== 'draft') {
+            return redirect()->back()->with('error','ลบได้เฉพาะสถานะฉบับร่าง');
+        }
+        BillItem::where('bill_id', $bill->id)->delete();
+        $bill->delete();
+        return redirect()->route('admin.documents.bills.index')->with('success','ลบบิลแล้ว');
     }
 
     public function pay(Request $request, int $id, PurchaseService $svc)
@@ -30,5 +172,14 @@ class BillsController extends Controller
         $bizId = (int) ($request->user()->business_id ?? 1);
         $svc->markPaid($id, $bizId, $data['date'] ?? now()->toDateString(), $data['method'] ?? 'bank');
         return back()->with('success','Bill marked as paid');
+    }
+
+    public function pdf(Request $request, int $id)
+    {
+        $bizId = (int) ($request->user()->business_id ?? 1);
+        $item = Bill::where('business_id',$bizId)->with('items')->findOrFail($id);
+        $pdf = Pdf::loadView('documents.bill_pdf', [ 'bill' => $item ]);
+        $filename = 'bill-'.($item->number ?? $item->id).'.pdf';
+        return $pdf->download($filename);
     }
 }

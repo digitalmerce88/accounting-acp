@@ -1,6 +1,9 @@
 <template>
   <AdminLayout>
-    <h1 class="text-xl font-semibold mb-3">ใบแจ้งหนี้/ใบกำกับภาษี</h1>
+    <div class="flex items-center justify-between mb-3">
+      <h1 class="text-xl font-semibold">ใบแจ้งหนี้/ใบกำกับภาษี</h1>
+      <a href="/admin/documents/invoices/create" class="px-3 py-1 bg-blue-700 text-white rounded text-sm">+ สร้างใหม่</a>
+    </div>
     <div class="overflow-x-auto">
       <table class="min-w-full border text-sm">
         <thead class="bg-gray-50">

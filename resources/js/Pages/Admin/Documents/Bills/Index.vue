@@ -1,6 +1,9 @@
 <template>
   <AdminLayout>
-    <h1 class="text-xl font-semibold mb-3">ใบวางบิล/ใบค่าใช้จ่าย</h1>
+    <div class="flex items-center justify-between mb-3">
+      <h1 class="text-xl font-semibold">ใบวางบิล/ใบค่าใช้จ่าย</h1>
+      <a href="/admin/documents/bills/create" class="px-3 py-1 bg-green-700 text-white rounded text-sm">+ สร้างใหม่</a>
+    </div>
     <div class="overflow-x-auto">
       <table class="min-w-full border text-sm">
         <thead class="bg-gray-50">

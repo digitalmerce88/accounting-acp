@@ -144,11 +144,23 @@
             $bill = \App\Http\Controllers\Admin\Documents\BillsController::class;
 
             Route::get('/invoices', [$inv,'index'])->name('invoices.index');
+            Route::get('/invoices/create', [$inv,'create'])->name('invoices.create');
+            Route::post('/invoices', [$inv,'store'])->name('invoices.store');
             Route::get('/invoices/{id}', [$inv,'show'])->name('invoices.show');
+            Route::get('/invoices/{id}/pdf', [$inv,'pdf'])->name('invoices.pdf');
+            Route::get('/invoices/{id}/edit', [$inv,'edit'])->name('invoices.edit');
+            Route::put('/invoices/{id}', [$inv,'update'])->name('invoices.update');
+            Route::delete('/invoices/{id}', [$inv,'destroy'])->name('invoices.destroy');
             Route::post('/invoices/{id}/pay', [$inv,'pay'])->name('invoices.pay');
 
             Route::get('/bills', [$bill,'index'])->name('bills.index');
+            Route::get('/bills/create', [$bill,'create'])->name('bills.create');
+            Route::post('/bills', [$bill,'store'])->name('bills.store');
             Route::get('/bills/{id}', [$bill,'show'])->name('bills.show');
+            Route::get('/bills/{id}/pdf', [$bill,'pdf'])->name('bills.pdf');
+            Route::get('/bills/{id}/edit', [$bill,'edit'])->name('bills.edit');
+            Route::put('/bills/{id}', [$bill,'update'])->name('bills.update');
+            Route::delete('/bills/{id}', [$bill,'destroy'])->name('bills.destroy');
             Route::post('/bills/{id}/pay', [$bill,'pay'])->name('bills.pay');
         });
 

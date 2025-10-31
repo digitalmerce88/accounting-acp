@@ -2,7 +2,12 @@
   <AdminLayout>
     <div class="flex items-center justify-between">
       <h1 class="text-xl font-semibold">Bill {{ item.number || item.id }}</h1>
-      <button v-if="item.status!=='paid'" @click="pay" class="px-3 py-1 bg-green-700 text-white rounded">จ่าย</button>
+      <div class="flex gap-2">
+        <a :href="`/admin/documents/bills/${item.id}/pdf`" class="px-3 py-1 border rounded">พิมพ์ PDF</a>
+        <a v-if="item.status!=='paid'" :href="`/admin/documents/bills/${item.id}/edit`" class="px-3 py-1 border rounded">แก้ไข</a>
+        <button v-if="item.status!=='paid'" @click="onDelete" class="px-3 py-1 bg-red-600 text-white rounded">ลบ</button>
+        <button v-if="item.status!=='paid'" @click="pay" class="px-3 py-1 bg-green-700 text-white rounded">จ่าย</button>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 text-sm">
@@ -32,4 +37,5 @@ import { computed } from 'vue'
 const item = computed(()=> usePage().props.item)
 function fmt(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) }
 function pay(){ if(confirm('จ่ายบิลนี้?')) router.post(`/admin/documents/bills/${item.value.id}/pay`, { date: new Date().toISOString().slice(0,10) }) }
+function onDelete(){ if(confirm('ลบเอกสารนี้?')) router.delete(`/admin/documents/bills/${item.value.id}`) }
 </script>
