@@ -138,6 +138,20 @@
             Route::delete('/payroll/{id}', [$pay, 'destroy'])->name('payroll.destroy');
         });
 
+        // Admin Documents routes
+        Route::prefix('documents')->name('admin.documents.')->group(function () {
+            $inv = \App\Http\Controllers\Admin\Documents\InvoicesController::class;
+            $bill = \App\Http\Controllers\Admin\Documents\BillsController::class;
+
+            Route::get('/invoices', [$inv,'index'])->name('invoices.index');
+            Route::get('/invoices/{id}', [$inv,'show'])->name('invoices.show');
+            Route::post('/invoices/{id}/pay', [$inv,'pay'])->name('invoices.pay');
+
+            Route::get('/bills', [$bill,'index'])->name('bills.index');
+            Route::get('/bills/{id}', [$bill,'show'])->name('bills.show');
+            Route::post('/bills/{id}/pay', [$bill,'pay'])->name('bills.pay');
+        });
+
         // Admin Users management (admin only)
         Route::middleware([EnsureRole::class . ':admin'])->prefix('users')->name('admin.users.')->group(function () {
             Route::get('/', [AdminUsers::class, 'index'])->name('index');
