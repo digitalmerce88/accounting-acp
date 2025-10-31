@@ -67,7 +67,8 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { usePage, router } from '@inertiajs/vue3'
 import { reactive, computed } from 'vue'
 const banks = computed(()=> usePage().props.banks || [])
-const f = reactive({ emp_code:'', name:'', position:'', start_date:'', base_salary_decimal:0, email:'', phone:'', sso_enabled:true, bank:{ code:'', name:'', number:'' }, tax:{ wht_fixed_decimal: null } })
+const suggest = computed(()=> usePage().props.suggest_code || '')
+const f = reactive({ emp_code: suggest.value, name:'', position:'', start_date:'', base_salary_decimal:0, email:'', phone:'', sso_enabled:true, bank:{ code:'', name:'', number:'' }, tax:{ wht_fixed_decimal: null } })
 function submit(){
   const selected = banks.value.find(b=>b.code===f.bank.code)
   if (selected) f.bank.name = selected.name

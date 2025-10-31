@@ -30,4 +30,9 @@ return [
         ['code' => 'KKP', 'name' => 'Kiatnakin Phatra Bank (KKP)'],
         ['code' => 'BAAC', 'name' => 'Bank for Agriculture and Agricultural Cooperatives (BAAC)'],
     ],
+
+    // Employee Code generation
+    'employee_code_start' => 10001,
+    // If you want zero-padding, set to desired width (null disables). Currently unused.
+    'employee_code_padding' => null,
 ];

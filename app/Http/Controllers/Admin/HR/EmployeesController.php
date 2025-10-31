@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
 
 class EmployeesController extends Controller
 {
@@ -24,9 +25,11 @@ class EmployeesController extends Controller
 
     public function create(Request $request)
     {
+        $bizId = (int) ($request->user()->business_id ?? 1);
         return Inertia::render('Admin/HR/Employees/Create', [
             'today' => now()->toDateString(),
             'banks' => config('hr.th_banks'),
+            'suggest_code' => $this->nextEmpCode($bizId),
         ]);
     }
 
@@ -51,9 +54,14 @@ class EmployeesController extends Controller
             'tax.wht_fixed_decimal' => ['nullable','numeric','min:0'],
         ]);
 
+        $empCode = $data['emp_code'] ?? null;
+        if (!$empCode) {
+            $empCode = $this->nextEmpCode($bizId);
+        }
+
         Employee::create([
             'business_id' => $bizId,
-            'emp_code' => $data['emp_code'] ?? null,
+            'emp_code' => $empCode,
             'name' => $data['name'],
             'position' => $data['position'] ?? null,
             'citizen_id' => $data['citizen_id'] ?? null,
@@ -142,5 +150,20 @@ class EmployeesController extends Controller
         $e = Employee::where('business_id',$bizId)->findOrFail($id);
         $e->update(['active' => true]);
         return back()->with('success', 'เปิดใช้งานพนักงานแล้ว');
+    }
+
+    private function nextEmpCode(int $businessId): string
+    {
+        $start = (int) config('hr.employee_code_start', 10001);
+        $max = (int) DB::table('employees')
+            ->where('business_id', $businessId)
+            ->whereNotNull('emp_code')
+            ->whereRaw('emp_code REGEXP "^[0-9]+$"')
+            ->selectRaw('MAX(CAST(emp_code AS UNSIGNED)) as m')
+            ->value('m');
+
+        $next = $max > 0 ? max($max + 1, $start) : $start;
+        $pad = config('hr.employee_code_padding');
+        return $pad ? str_pad((string)$next, (int)$pad, '0', STR_PAD_LEFT) : (string)$next;
     }
 }
