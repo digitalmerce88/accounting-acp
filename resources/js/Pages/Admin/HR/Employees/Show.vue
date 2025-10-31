@@ -45,6 +45,10 @@
         <div class="text-gray-500">บัญชีธนาคาร</div>
         <div class="font-medium">{{ item.bank_account_json?.name || '-' }} {{ item.bank_account_json?.number || '' }}</div>
       </div>
+      <div>
+        <div class="text-gray-500">หัก ณ ที่จ่าย (กำหนดเอง)</div>
+        <div class="font-medium">{{ item.tax_profile_json?.wht_fixed_decimal ? fmt(item.tax_profile_json.wht_fixed_decimal) + ' บาท/เดือน' : '-' }}</div>
+      </div>
     </div>
   </AdminLayout>
 </template>

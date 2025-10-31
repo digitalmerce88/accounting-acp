@@ -26,6 +26,7 @@ class EmployeesController extends Controller
     {
         return Inertia::render('Admin/HR/Employees/Create', [
             'today' => now()->toDateString(),
+            'banks' => config('hr.th_banks'),
         ]);
     }
 
@@ -43,8 +44,11 @@ class EmployeesController extends Controller
             'phone' => ['nullable','string','max:50'],
             'sso_enabled' => ['required','boolean'],
             'bank' => ['nullable','array'],
+            'bank.code' => ['nullable','string','max:20'],
             'bank.name' => ['nullable','string','max:100'],
             'bank.number' => ['nullable','string','max:100'],
+            'tax' => ['nullable','array'],
+            'tax.wht_fixed_decimal' => ['nullable','numeric','min:0'],
         ]);
 
         Employee::create([
@@ -59,6 +63,7 @@ class EmployeesController extends Controller
             'phone' => $data['phone'] ?? null,
             'sso_enabled' => (bool)$data['sso_enabled'],
             'bank_account_json' => $data['bank'] ?? null,
+            'tax_profile_json' => $data['tax'] ?? null,
             'active' => true,
         ]);
 
@@ -80,6 +85,7 @@ class EmployeesController extends Controller
         $e = Employee::where('business_id',$bizId)->findOrFail($id);
         return Inertia::render('Admin/HR/Employees/Edit', [
             'item' => $e,
+            'banks' => config('hr.th_banks'),
         ]);
     }
 
@@ -98,9 +104,12 @@ class EmployeesController extends Controller
             'phone' => ['nullable','string','max:50'],
             'sso_enabled' => ['required','boolean'],
             'bank' => ['nullable','array'],
+            'bank.code' => ['nullable','string','max:20'],
             'bank.name' => ['nullable','string','max:100'],
             'bank.number' => ['nullable','string','max:100'],
             'active' => ['nullable','boolean'],
+            'tax' => ['nullable','array'],
+            'tax.wht_fixed_decimal' => ['nullable','numeric','min:0'],
         ]);
         $e->update([
             'emp_code' => $data['emp_code'] ?? null,
@@ -113,6 +122,7 @@ class EmployeesController extends Controller
             'phone' => $data['phone'] ?? null,
             'sso_enabled' => (bool)$data['sso_enabled'],
             'bank_account_json' => $data['bank'] ?? null,
+            'tax_profile_json' => $data['tax'] ?? null,
             'active' => array_key_exists('active', $data) ? (bool)$data['active'] : $e->active,
         ]);
         return redirect()->route('admin.hr.employees.index')->with('success', 'อัปเดตข้อมูลพนักงานเรียบร้อย');

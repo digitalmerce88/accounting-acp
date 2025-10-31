@@ -18,7 +18,7 @@ class PayrollService
         // seed items from active employees
         $emps = Employee::where('business_id',$businessId)->where('active',true)->get();
         foreach ($emps as $e) {
-            $calc = $this->calcForEmployee($e->base_salary_decimal ?? 0);
+            $calc = $this->calcForEmployee($e);
             PayrollItem::create([
                 'payroll_run_id' => $run->id,
                 'employee_id' => $e->id,
@@ -76,14 +76,21 @@ class PayrollService
         return $run;
     }
 
-    public function calcForEmployee(float $baseSalary): array
+    public function calcForEmployee(Employee $emp): array
     {
         $cfg = config('hr');
+        $baseSalary = (float) ($emp->base_salary_decimal ?? 0);
         $base = min($baseSalary, $cfg['sso_wage_ceiling']);
         $ssoEmp = round($base * $cfg['sso_employee_rate'], 2);
         $ssoEr = round($base * $cfg['sso_employer_rate'], 2);
         $taxable = max(0, $baseSalary - $ssoEmp);
-        $wht = round($this->applyBracket($taxable, $cfg['wht_table']), 2);
+        $override = (float) ($emp->tax_profile_json['wht_fixed_decimal'] ?? 0);
+        if ($override > 0) {
+            // clamp not to exceed taxable
+            $wht = round(min($override, $taxable), 2);
+        } else {
+            $wht = round($this->applyBracket($taxable, $cfg['wht_table']), 2);
+        }
         $net = round($baseSalary - $ssoEmp - $wht, 2);
         return [
             'sso_employee' => $ssoEmp,
