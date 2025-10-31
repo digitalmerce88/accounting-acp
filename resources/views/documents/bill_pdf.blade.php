@@ -22,7 +22,7 @@
 <body>
   <div class="header">
     <h1>ใบวางบิล / Supplier Bill</h1>
-    @php($company = config('company'))
+  @php($company = isset($company) && is_array($company) ? $company : config('company'))
     <table style="border:0;">
       <tr>
         <td style="border:0; width:60%; vertical-align:top;">

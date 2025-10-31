@@ -51,6 +51,9 @@
         // Old backup and simple journal endpoint (keep for compatibility)
         Route::get('/settings/backup', [BackupController::class, 'download'])->name('settings.backup');
         Route::post('/journal', [JournalController::class, 'store'])->name('journal.store');
+    // Company settings
+    Route::get('/settings/company', [\App\Http\Controllers\Admin\Settings\CompanyController::class, 'edit'])->name('admin.settings.company.edit');
+    Route::put('/settings/company', [\App\Http\Controllers\Admin\Settings\CompanyController::class, 'update'])->name('admin.settings.company.update');
 
     // Admin Accounting routes
         Route::prefix('accounting')->name('admin.accounting.')->group(function () {

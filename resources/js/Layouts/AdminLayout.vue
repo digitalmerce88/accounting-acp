@@ -43,6 +43,8 @@
           <div class="pt-2 text-xs font-semibold text-gray-500">เอกสารขาย/ซื้อ</div>
           <Link href="/admin/documents/invoices" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/documents/invoices') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ใบแจ้งหนี้</Link>
           <Link href="/admin/documents/bills" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/documents/bills') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ใบวางบิล</Link>
+          <div class="pt-2 text-xs font-semibold text-gray-500">การตั้งค่า</div>
+          <Link href="/admin/settings/company" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/settings/company') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ข้อมูลบริษัท</Link>
         </nav>
       </aside>
 

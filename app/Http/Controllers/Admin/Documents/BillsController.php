@@ -236,8 +236,21 @@ class BillsController extends Controller
     public function pdf(Request $request, int $id)
     {
         $bizId = (int) ($request->user()->business_id ?? 1);
-        $item = Bill::where('business_id',$bizId)->with('items')->findOrFail($id);
-        $pdf = Pdf::setOptions(['isHtml5ParserEnabled'=>true,'isRemoteEnabled'=>true])->loadView('documents.bill_pdf', [ 'bill' => $item ]);
+        $item = Bill::where('business_id',$bizId)->with(['items','vendor'])->findOrFail($id);
+        $company = \App\Models\CompanyProfile::where('business_id',$bizId)->first();
+        $companyArr = $company ? [
+            'name' => $company->name,
+            'tax_id' => $company->tax_id,
+            'phone' => $company->phone,
+            'email' => $company->email,
+            'address' => [
+                'line1' => $company->address_line1,
+                'line2' => $company->address_line2,
+                'province' => $company->province,
+                'postcode' => $company->postcode,
+            ],
+        ] : config('company');
+        $pdf = Pdf::setOptions(['isHtml5ParserEnabled'=>true,'isRemoteEnabled'=>true])->loadView('documents.bill_pdf', [ 'bill' => $item, 'company' => $companyArr ]);
         $filename = 'bill-'.($item->number ?? $item->id).'.pdf';
         return $pdf->download($filename);
     }
