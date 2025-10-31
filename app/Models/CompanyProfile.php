@@ -10,6 +10,6 @@ class CompanyProfile extends Model
     use HasFactory;
 
     protected $fillable = [
-        'business_id','name','tax_id','phone','email','address_line1','address_line2','province','postcode'
+        'business_id','name','tax_id','phone','email','address_line1','address_line2','province','postcode','logo_path'
     ];
 }

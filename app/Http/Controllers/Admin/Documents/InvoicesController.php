@@ -263,6 +263,7 @@ class InvoicesController extends Controller
                 'province' => $company->province,
                 'postcode' => $company->postcode,
             ],
+            'logo_abs_path' => $company->logo_path ? public_path('storage/'.$company->logo_path) : null,
         ] : config('company');
         $pdf = Pdf::setOptions(['isHtml5ParserEnabled'=>true,'isRemoteEnabled'=>true])->loadView('documents.invoice_pdf', [ 'inv' => $item, 'company' => $companyArr ]);
         $filename = 'invoice-'.($item->number ?? $item->id).'.pdf';

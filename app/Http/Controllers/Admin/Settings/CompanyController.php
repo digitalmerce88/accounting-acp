@@ -28,11 +28,26 @@ class CompanyController extends Controller
             'address_line2' => ['nullable','string','max:200'],
             'province' => ['nullable','string','max:120'],
             'postcode' => ['nullable','string','max:20'],
+            'logo' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:2048'],
+            'remove_logo' => ['nullable','boolean'],
         ]);
-        $item = CompanyProfile::updateOrCreate(
-            ['business_id' => $bizId],
-            array_merge($data, ['business_id'=>$bizId])
-        );
+        $item = CompanyProfile::firstOrCreate(['business_id'=>$bizId], ['name'=>$data['name']]);
+        $item->fill($data);
+
+        // handle logo upload/remove
+        if (($data['remove_logo'] ?? false) && $item->logo_path) {
+            \Storage::disk('public')->delete($item->logo_path);
+            $item->logo_path = null;
+        }
+        if ($request->hasFile('logo')) {
+            $path = $request->file('logo')->store('company-logos','public');
+            if ($item->logo_path && $item->logo_path !== $path) {
+                \Storage::disk('public')->delete($item->logo_path);
+            }
+            $item->logo_path = $path;
+        }
+        $item->business_id = $bizId;
+        $item->save();
         return redirect()->route('admin.settings.company.edit')->with('success','บันทึกข้อมูลบริษัทแล้ว');
     }
 }

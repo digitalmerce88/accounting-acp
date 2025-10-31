@@ -257,6 +257,7 @@ class BillsController extends Controller
                 'province' => $company->province,
                 'postcode' => $company->postcode,
             ],
+            'logo_abs_path' => $company->logo_path ? public_path('storage/'.$company->logo_path) : null,
         ] : config('company');
         $pdf = Pdf::setOptions(['isHtml5ParserEnabled'=>true,'isRemoteEnabled'=>true])->loadView('documents.bill_pdf', [ 'bill' => $item, 'company' => $companyArr ]);
         $filename = 'bill-'.($item->number ?? $item->id).'.pdf';
