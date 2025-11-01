@@ -8,6 +8,7 @@ use App\Models\{PayrollRun, PayrollItem, Employee};
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PayrollController extends Controller
 {
@@ -84,5 +85,78 @@ class PayrollController extends Controller
             $run->delete();
         });
         return redirect()->route('admin.hr.payroll.index')->with('success', 'ลบรอบเงินเดือนแล้ว');
+    }
+
+    public function summaryPdf(Request $request, int $id)
+    {
+        $bizId = (int) ($request->user()->business_id ?? 1);
+        $run = PayrollRun::where('business_id',$bizId)->findOrFail($id);
+        $items = PayrollItem::where('payroll_run_id',$run->id)->with('employee:id,name,emp_code,position')->orderBy('id')->get();
+        $company = \App\Models\CompanyProfile::where('business_id',$bizId)->first();
+        $companyArr = $company ? [
+            'name' => $company->name,
+            'tax_id' => $company->tax_id,
+            'phone' => $company->phone,
+            'email' => $company->email,
+            'address' => [
+                'line1' => $company->address_line1,
+                'line2' => $company->address_line2,
+                'province' => $company->province,
+                'postcode' => $company->postcode,
+            ],
+            'logo_abs_path' => $company->logo_path ? public_path('storage/'.$company->logo_path) : null,
+        ] : config('company');
+
+        $filename = sprintf('payroll-%04d-%02d-summary.pdf', $run->period_year, $run->period_month);
+        $engine = $request->get('engine', config('documents.pdf_engine', 'dompdf'));
+        if ($engine === 'mpdf') {
+            $html = view('hr.payroll_summary_pdf', compact('run','items','companyArr') + ['engine'=>'mpdf'])->render();
+            $tmpDir = storage_path('app/mpdf'); if (!is_dir($tmpDir)) { @mkdir($tmpDir, 0755, true); }
+            $mpdf = new \Mpdf\Mpdf(['mode'=>'utf-8','tempDir'=>$tmpDir,'format'=>'A4','default_font_size'=>13,'default_font'=>'garuda']);
+            $mpdf->autoScriptToLang = true; $mpdf->autoLangToFont = true; $mpdf->WriteHTML($html);
+            if ($request->boolean('dl') || $request->boolean('download')) {
+                return response($mpdf->Output($filename, \Mpdf\Output\Destination::STRING_RETURN), 200, ['Content-Type'=>'application/pdf','Content-Disposition'=>'attachment; filename="'.$filename.'"']);
+            }
+            return response($mpdf->Output($filename, \Mpdf\Output\Destination::STRING_RETURN), 200, ['Content-Type'=>'application/pdf','Content-Disposition'=>'inline; filename="'.$filename.'"']);
+        }
+        $pdf = Pdf::setOptions(['isHtml5ParserEnabled'=>true,'isRemoteEnabled'=>true])->loadView('hr.payroll_summary_pdf', [ 'run'=>$run, 'items'=>$items, 'companyArr'=>$companyArr ]);
+        if ($request->boolean('dl') || $request->boolean('download')) { return $pdf->download($filename); }
+        return $pdf->stream($filename, ['Attachment' => false]);
+    }
+
+    public function payslipsPdf(Request $request, int $id)
+    {
+        $bizId = (int) ($request->user()->business_id ?? 1);
+        $run = PayrollRun::where('business_id',$bizId)->findOrFail($id);
+        $items = PayrollItem::where('payroll_run_id',$run->id)->with('employee')->orderBy('id')->get();
+        $company = \App\Models\CompanyProfile::where('business_id',$bizId)->first();
+        $companyArr = $company ? [
+            'name' => $company->name,
+            'tax_id' => $company->tax_id,
+            'phone' => $company->phone,
+            'email' => $company->email,
+            'address' => [
+                'line1' => $company->address_line1,
+                'line2' => $company->address_line2,
+                'province' => $company->province,
+                'postcode' => $company->postcode,
+            ],
+            'logo_abs_path' => $company->logo_path ? public_path('storage/'.$company->logo_path) : null,
+        ] : config('company');
+        $filename = sprintf('payroll-%04d-%02d-payslips.pdf', $run->period_year, $run->period_month);
+        $engine = $request->get('engine', config('documents.pdf_engine', 'dompdf'));
+        if ($engine === 'mpdf') {
+            $html = view('hr.payslips_pdf', compact('run','items','companyArr') + ['engine'=>'mpdf'])->render();
+            $tmpDir = storage_path('app/mpdf'); if (!is_dir($tmpDir)) { @mkdir($tmpDir, 0755, true); }
+            $mpdf = new \Mpdf\Mpdf(['mode'=>'utf-8','tempDir'=>$tmpDir,'format'=>'A4','default_font_size'=>13,'default_font'=>'garuda']);
+            $mpdf->autoScriptToLang = true; $mpdf->autoLangToFont = true; $mpdf->WriteHTML($html);
+            if ($request->boolean('dl') || $request->boolean('download')) {
+                return response($mpdf->Output($filename, \Mpdf\Output\Destination::STRING_RETURN), 200, ['Content-Type'=>'application/pdf','Content-Disposition'=>'attachment; filename="'.$filename.'"']);
+            }
+            return response($mpdf->Output($filename, \Mpdf\Output\Destination::STRING_RETURN), 200, ['Content-Type'=>'application/pdf','Content-Disposition'=>'inline; filename="'.$filename.'"']);
+        }
+        $pdf = Pdf::setOptions(['isHtml5ParserEnabled'=>true,'isRemoteEnabled'=>true])->loadView('hr.payslips_pdf', [ 'run'=>$run, 'items'=>$items, 'companyArr'=>$companyArr ]);
+        if ($request->boolean('dl') || $request->boolean('download')) { return $pdf->download($filename); }
+        return $pdf->stream($filename, ['Attachment' => false]);
     }
 }

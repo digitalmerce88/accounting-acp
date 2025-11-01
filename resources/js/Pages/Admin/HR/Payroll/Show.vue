@@ -7,6 +7,8 @@
         <button v-if="run.status==='draft'" @click="del()" class="px-3 py-1 bg-red-700 text-white rounded">ลบ</button>
         <button v-if="run.status==='locked'" @click="pay()" class="px-3 py-1 bg-blue-700 text-white rounded">จ่าย</button>
         <button v-if="run.status==='locked'" @click="unlock()" class="px-3 py-1 bg-orange-600 text-white rounded">ปลดล็อค</button>
+        <a :href="`/admin/hr/payroll/${run.id}/summary.pdf`" target="_blank" rel="noopener" class="px-3 py-1 border rounded">พิมพ์สรุป</a>
+        <a :href="`/admin/hr/payroll/${run.id}/payslips.pdf`" target="_blank" rel="noopener" class="px-3 py-1 border rounded">พิมพ์สลิปทั้งหมด</a>
       </div>
     </div>
 

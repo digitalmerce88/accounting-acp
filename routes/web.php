@@ -138,6 +138,8 @@
             Route::post('/payroll/{id}/lock', [$pay, 'lock'])->name('payroll.lock');
             Route::post('/payroll/{id}/unlock', [$pay, 'unlock'])->name('payroll.unlock');
             Route::post('/payroll/{id}/pay', [$pay, 'pay'])->name('payroll.pay');
+            Route::get('/payroll/{id}/summary.pdf', [$pay, 'summaryPdf'])->name('payroll.summary.pdf');
+            Route::get('/payroll/{id}/payslips.pdf', [$pay, 'payslipsPdf'])->name('payroll.payslips.pdf');
             Route::delete('/payroll/{id}', [$pay, 'destroy'])->name('payroll.destroy');
         });
 
