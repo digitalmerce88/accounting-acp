@@ -165,8 +165,20 @@ class PayrollController extends Controller
         if ($engine === 'mpdf') {
             $html = view('hr.payslips_pdf', compact('run','items','companyArr','ytd','asOfDate') + ['engine'=>'mpdf'])->render();
             $tmpDir = storage_path('app/mpdf'); if (!is_dir($tmpDir)) { @mkdir($tmpDir, 0755, true); }
-            $mpdf = new \Mpdf\Mpdf(['mode'=>'utf-8','tempDir'=>$tmpDir,'format'=>'A5-L','default_font_size'=>12,'default_font'=>'garuda']);
-            $mpdf->autoScriptToLang = true; $mpdf->autoLangToFont = true; $mpdf->WriteHTML($html);
+            $mpdf = new \Mpdf\Mpdf([
+                'mode'=>'utf-8',
+                'tempDir'=>$tmpDir,
+                'format'=>'A5-L',
+                'margin_top'=>10,
+                'margin_bottom'=>10,
+                'margin_left'=>12,
+                'margin_right'=>12,
+                'default_font_size'=>11,
+                'default_font'=>'garuda'
+            ]);
+            $mpdf->autoScriptToLang = true; 
+            $mpdf->autoLangToFont = true; 
+            $mpdf->WriteHTML($html);
             if ($request->boolean('dl') || $request->boolean('download')) {
                 return response($mpdf->Output($filename, \Mpdf\Output\Destination::STRING_RETURN), 200, ['Content-Type'=>'application/pdf','Content-Disposition'=>'attachment; filename="'.$filename.'"']);
             }

@@ -26,19 +26,22 @@
 
         body {
             font-family: {{ isset($engine) && $engine === 'mpdf' ? 'Garuda, DejaVu Sans, sans-serif' : 'THSarabunNew, DejaVu Sans, sans-serif' }};
-            font-size: 12px;
+            font-size: 11px;
             color: #111;
+            margin: 0;
+            padding: 0;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
+            margin: 0;
         }
 
         th,
         td {
             border: 1px solid #999;
-            padding: 6px;
+            padding: 4px;
             vertical-align: top;
         }
 
@@ -57,11 +60,11 @@
 
         .muted {
             color: #666;
-            font-size: 11px;
+            font-size: 10px;
         }
 
         .logo {
-            height: 50px;
+            height: 40px;
         }
 
         .pagebreak {
@@ -106,7 +109,7 @@
         @endphp
 
         <!-- Header: logo, company info, doc no/period -->
-        <table style="border:0; margin-bottom:10px;">
+        <table style="border:0; margin-bottom:6px;">
             <tr>
                 <td class="noborder" style="width:15%; vertical-align:middle;">
                     @if (!empty($companyArr['logo_abs_path']) && file_exists($companyArr['logo_abs_path']))
@@ -114,7 +117,7 @@
                     @endif
                 </td>
                 <td class="noborder" style="width:55%;">
-                    <div style="font-weight:700; font-size:15px;">{{ $companyArr['name'] ?? '' }}</div>
+                    <div style="font-weight:700; font-size:13px;">{{ $companyArr['name'] ?? '' }}</div>
                     <div class="muted">{{ $companyArr['address']['line1'] ?? '' }}
                         {{ $companyArr['address']['line2'] ?? '' }} {{ $companyArr['address']['province'] ?? '' }}
                         {{ $companyArr['address']['postcode'] ?? '' }}</div>
@@ -128,31 +131,31 @@
         </table>
 
         <!-- Employee info row -->
-        <table style="border:0; margin-bottom:8px;">
+        <table style="border:0; margin-bottom:6px;">
             <tr>
-                <td class="noborder" style="width:50%;">
-                    <strong>รหัสพนักงาน: </strong> {{ $it->employee->emp_code ?? '-' }}
-                    <br />
-                    <strong>ชื่อพนักงาน: </strong> {{ $it->employee->name ?? '-' }}
-                    <br />
-                    <strong> ตำแหน่ง: ({{ $it->employee->position ?? 'พนักงาน' }})</strong>
+                <td class="noborder" style="width:70%;">
+                    <strong>รหัสพนักงาน:</strong> {{ $it->employee->emp_code ?? '-' }}
+                    &nbsp;&nbsp;&nbsp;
+                    <strong>ชื่อพนักงาน:</strong> {{ $it->employee->name ?? '-' }}
+                    &nbsp;&nbsp;&nbsp;
+                    <strong>ตำแหน่ง:</strong> {{ $it->employee->position ?? 'พนักงาน' }}
                 </td>
-                <td class="noborder" style="width:50%; text-align:right;">
+                <td class="noborder" style="width:30%; text-align:right;">
                 </td>
             </tr>
         </table>
 
-        <!-- Date and Net Pay boxes on the right -->
-        <table style="border:0; margin-bottom:8px;">
+        <!-- Date and Net Pay boxes -->
+        <table style="border:0; margin-bottom:6px;">
             <tr>
                 <td class="noborder" style="width:60%;"></td>
-                <td style="width:20%; text-align:center;">
-                    <div style="font-weight:700;">วันที่จ่าย<br />Payslip Date</div>
-                    <div style="font-size:14px;">{{ $dateStr }}</div>
+                <td style="width:20%; text-align:center; padding:4px;">
+                    <div style="font-weight:700; font-size:10px;">วันที่จ่าย / Payslip Date</div>
+                    <div style="font-size:11px;">{{ $dateStr }}</div>
                 </td>
-                <td style="width:20%; text-align:center;">
-                    <div style="font-weight:700;">เงินได้สุทธิ<br />Net to Pay</div>
-                    <div style="font-size:16px; font-weight:700;">{{ number_format($it->net_pay_decimal, 2) }}</div>
+                <td style="width:20%; text-align:center; padding:4px;">
+                    <div style="font-weight:700; font-size:10px;">เงินได้สุทธิ / Net to Pay</div>
+                    <div style="font-size:13px; font-weight:700;">{{ number_format($it->net_pay_decimal, 2) }}</div>
                 </td>
             </tr>
         </table>
@@ -200,12 +203,12 @@
 
 
         <!-- YTD row (single row, 4 columns) -->
-        <table style="margin-bottom:8px;">
+        <table style="margin-bottom:6px;">
             <tr>
-                <th class="center" style="width:25%">เงินได้สะสม<br />(YTD Income)</th>
-                <th class="center" style="width:25%">เงินหักสะสม<br />(YTD Deduction)</th>
-                <th class="center" style="width:25%">ภาษีสะสม<br />(YTD TAX)</th>
-                <th class="center" style="width:25%">ประกันสังคมสะสม<br />(YTD SSF)</th>
+                <th class="center" style="width:25%; font-size:10px;">เงินได้สะสม<br />(YTD Income)</th>
+                <th class="center" style="width:25%; font-size:10px;">เงินหักสะสม<br />(YTD Deduction)</th>
+                <th class="center" style="width:25%; font-size:10px;">ภาษีสะสม<br />(YTD TAX)</th>
+                <th class="center" style="width:25%; font-size:10px;">ประกันสังคมสะสม<br />(YTD SSF)</th>
             </tr>
             <tr>
                 <td class="right">{{ number_format($yIncome, 2) }}</td>
@@ -219,8 +222,8 @@
         <table style="border:0;">
             <tr>
                 <td class="noborder" style="width:70%;"></td>
-                <td class="center" style="width:30%; height:60px;">
-                    <div style="font-weight:700;"><br /><br /><br />ลงชื่อพนักงาน<br />Employee Signature</div>
+                <td class="center" style="width:30%; height:50px; padding-top:30px;">
+                    <div style="font-weight:700; font-size:10px;">ลงชื่อพนักงาน<br />Employee Signature</div>
                 </td>
             </tr>
         </table>
