@@ -79,10 +79,25 @@
     </tr>
     <tr>
       <td>อัตราเงินเดือน</td>
-      <td class="right">{{ number_format($incomeBasic + $incomeOther,2) }}</td>
-      <td>เงินสมทบกองทุนประกันสังคม / ภาษีเงินได้</td>
-      <td class="right">{{ number_format($deductSso + $deductTax,2) }}</td>
+      <td class="right">{{ number_format($incomeBasic,2) }}</td>
+      <td>เงินสมทบกองทุนประกันสังคม</td>
+      <td class="right">{{ number_format($deductSso,2) }}</td>
     </tr>
+    @if($incomeOther > 0)
+    <tr>
+      <td>รายได้อื่นๆ</td>
+      <td class="right">{{ number_format($incomeOther,2) }}</td>
+      <td>ภาษีเงินได้</td>
+      <td class="right">{{ number_format($deductTax,2) }}</td>
+    </tr>
+    @else
+    <tr>
+      <td>&nbsp;</td>
+      <td class="right">&nbsp;</td>
+      <td>ภาษีเงินได้</td>
+      <td class="right">{{ number_format($deductTax,2) }}</td>
+    </tr>
+    @endif
     <tr>
       <td colspan="2" class="right" style="font-weight:700;">รวมรายได้ (Total Income)</td>
       <td colspan="2" class="right" style="font-weight:700;">รวมรายการหัก (Total Deduction)</td>
