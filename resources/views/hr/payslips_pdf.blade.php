@@ -10,17 +10,16 @@
     @page { margin: 16mm 14mm 18mm 14mm; }
     body { font-family: {{ isset($engine) && $engine==='mpdf' ? 'Garuda, DejaVu Sans, sans-serif' : 'THSarabunNew, DejaVu Sans, sans-serif' }}; font-size:13px; color:#111; }
     table { width:100%; border-collapse: collapse; }
-    th, td { border:1px solid #ccc; padding:6px; vertical-align: top; }
-    th { background: #f5f7fa; }
+    th, td { border:1px solid #999; padding:6px; vertical-align: top; }
+    th { background: #f5f7fa; font-weight: 700; }
     .right { text-align:right; }
-    .muted { color:#666; }
-    .logo { height: 40px; }
-    .stack > div { margin:4px 0; }
-    .box { border:1px solid #e5e7eb; border-radius:4px; padding:6px; }
+    .center { text-align:center; }
+    .muted { color:#666; font-size:11px; }
+    .logo { height: 50px; }
     .pagebreak { page-break-after: always; }
+    .noborder { border:0 !important; }
   </style>
   @php
-    // Helpers for Thai date
     function th_date($iso){ if(!$iso) return '-'; $d=\Carbon\Carbon::parse($iso); return $d->format('d/m').'/'.($d->year+543); }
     function th_period($y,$m){ return str_pad($m,2,'0',STR_PAD_LEFT).'/'.($y+543); }
   @endphp
@@ -42,35 +41,40 @@
     $ySSF = $y ? (float)$y->ytd_ssf : $deductSso;
   @endphp
 
-  <!-- Header block -->
-  <table style="border:0; margin-bottom:6px;">
+  <!-- Header: logo, company info, doc no/period -->
+  <table style="border:0; margin-bottom:10px;">
     <tr>
-      <td style="border:0; width:60%;">
-        <div style="font-weight:700; font-size:16px;">{{ $companyArr['name'] ?? '' }}</div>
+      <td class="noborder" style="width:15%; vertical-align:middle;">
+        @if(!empty($companyArr['logo_abs_path']) && file_exists($companyArr['logo_abs_path']))
+          <img class="logo" src="{{ $companyArr['logo_abs_path'] }}" />
+        @endif
+      </td>
+      <td class="noborder" style="width:55%;">
+        <div style="font-weight:700; font-size:15px;">{{ $companyArr['name'] ?? '' }}</div>
         <div class="muted">{{ $companyArr['address']['line1'] ?? '' }} {{ $companyArr['address']['line2'] ?? '' }} {{ $companyArr['address']['province'] ?? '' }} {{ $companyArr['address']['postcode'] ?? '' }}</div>
         <div class="muted">เลขผู้เสียภาษี {{ $companyArr['tax_id'] ?? '-' }}</div>
-        <div class="stack" style="margin-top:6px;">
-          <div><strong>ชื่อ/Name:</strong> {{ $it->employee->name ?? '-' }}</div>
-          <div class="muted">แผนก/Dept.: {{ $it->employee->position ?? '-' }}</div>
-        </div>
       </td>
-      <td style="border:0; width:40%;">
-        <table class="box" style="width:100%; border:0;">
-          <tr>
-            <td style="border:0; width:50%;">เลขที่/No.</td>
-            <td style="border:0;" class="right">{{ $docNo }}</td>
-          </tr>
-          <tr>
-            <td style="border:0;">งวดที่จ่าย/Period</td>
-            <td style="border:0;" class="right">{{ $period }}</td>
-          </tr>
-        </table>
+      <td class="noborder" style="width:30%; text-align:right;">
+        <div><strong>เลขที่/No.</strong> {{ $docNo }}</div>
+        <div><strong>งวดที่จ่าย/Period</strong> {{ $period }}</div>
       </td>
     </tr>
   </table>
 
-  <!-- Main grid: Income | Deduction and side boxes -->
-  <table style="margin-bottom:6px;">
+  <!-- Employee info row -->
+  <table style="border:0; margin-bottom:8px;">
+    <tr>
+      <td class="noborder" style="width:50%;">
+        <strong>ชื่อ<br/>พนักงาน:<br/>Name</strong> {{ $it->employee->name ?? '-' }}
+      </td>
+      <td class="noborder" style="width:50%; text-align:right;">
+        <strong>แผนก/ฝ่าย: SERVICE ({{ $it->employee->position ?? 'พนักงาน' }})<br/>Dept.</strong>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Main table: 4 columns -->
+  <table style="margin-bottom:0;">
     <tr>
       <th style="width:40%">รายได้<br/>Income</th>
       <th style="width:15%" class="right">จำนวนเงิน<br/>Amount</th>
@@ -103,33 +107,33 @@
       <td colspan="2" class="right" style="font-weight:700;">รวมรายการหัก (Total Deduction)</td>
     </tr>
     <tr>
-      <td colspan="2" class="right">{{ number_format($incomeBasic + $incomeOther,2) }}</td>
-      <td colspan="2" class="right">{{ number_format($deductSso + $deductTax,2) }}</td>
+      <td colspan="2" class="right" style="font-weight:700;">{{ number_format($incomeBasic + $incomeOther,2) }}</td>
+      <td colspan="2" class="right" style="font-weight:700;">{{ number_format($deductSso + $deductTax,2) }}</td>
     </tr>
   </table>
 
+  <!-- Date and Net Pay boxes on the right -->
   <table style="border:0; margin-bottom:8px;">
     <tr>
-      <td style="border:0; width:60%;"></td>
-      <td style="border:0; width:20%;" class="box">
-        <div>วันที่จ่าย<br/>Payslip Date</div>
-        <div class="right" style="font-weight:700;">{{ $dateStr }}</div>
+      <td class="noborder" style="width:60%;"></td>
+      <td style="width:20%; text-align:center;">
+        <div style="font-weight:700;">วันที่จ่าย<br/>Payslip Date</div>
+        <div style="font-size:14px;">{{ $dateStr }}</div>
       </td>
-      <td style="border:0; width:20%;" class="box">
-        <div>เงินได้สุทธิ<br/>Net to Pay</div>
-        <div class="right" style="font-weight:700; font-size:16px;">{{ number_format($it->net_pay_decimal,2) }}</div>
+      <td style="width:20%; text-align:center;">
+        <div style="font-weight:700;">เงินได้สุทธิ<br/>Net to Pay</div>
+        <div style="font-size:16px; font-weight:700;">{{ number_format($it->net_pay_decimal,2) }}</div>
       </td>
     </tr>
   </table>
 
-  <!-- YTD row and signature -->
-  <table>
+  <!-- YTD row (single row, 4 columns) -->
+  <table style="margin-bottom:8px;">
     <tr>
-      <th style="width:25%">เงินได้สะสม<br/>YTD Income</th>
-      <th style="width:25%">เงินหักสะสม
-        <br/>YTD Deduction</th>
-      <th style="width:25%">ภาษีสะสม<br/>YTD TAX</th>
-      <th style="width:25%">ประกันสังคมสะสม<br/>YTD SSF</th>
+      <th class="center" style="width:25%">เงินได้สะสม<br/>(YTD Income)</th>
+      <th class="center" style="width:25%">เงินหักสะสม<br/>(YTD Deduction)</th>
+      <th class="center" style="width:25%">ภาษีสะสม<br/>(YTD TAX)</th>
+      <th class="center" style="width:25%">ประกันสังคมสะสม<br/>(YTD SSF)</th>
     </tr>
     <tr>
       <td class="right">{{ number_format($yIncome,2) }}</td>
@@ -139,10 +143,13 @@
     </tr>
   </table>
 
-  <table style="border:0; margin-top:6px;">
+  <!-- Employee signature box on bottom right -->
+  <table style="border:0;">
     <tr>
-      <td style="border:0; width:75%"></td>
-      <td style="border:0; width:25%;" class="box">ลงชื่อพนักงาน<br/>Employee Signature</td>
+      <td class="noborder" style="width:70%;"></td>
+      <td class="center" style="width:30%; height:60px;">
+        <div style="font-weight:700;">ลงชื่อพนักงาน<br/>Employee Signature</div>
+      </td>
     </tr>
   </table>
 
