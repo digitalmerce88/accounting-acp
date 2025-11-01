@@ -129,6 +129,22 @@ class PayrollController extends Controller
         $bizId = (int) ($request->user()->business_id ?? 1);
         $run = PayrollRun::where('business_id',$bizId)->findOrFail($id);
         $items = PayrollItem::where('payroll_run_id',$run->id)->with('employee')->orderBy('id')->get();
+        $empIds = $items->pluck('employee_id')->filter()->unique()->values();
+        // YTD up to current run month in the same year
+        $ytdRows = \App\Models\PayrollItem::query()
+            ->selectRaw('payroll_items.employee_id as employee_id, '
+                . 'SUM(earning_basic_decimal + IFNULL(earning_other_decimal,0)) as ytd_income, '
+                . 'SUM(sso_employee_decimal + wht_decimal) as ytd_deduction, '
+                . 'SUM(wht_decimal) as ytd_tax, '
+                . 'SUM(sso_employee_decimal) as ytd_ssf')
+            ->join('payroll_runs','payroll_runs.id','=','payroll_items.payroll_run_id')
+            ->where('payroll_runs.business_id',$bizId)
+            ->where('payroll_runs.period_year',$run->period_year)
+            ->where('payroll_runs.period_month','<=',$run->period_month)
+            ->whereIn('payroll_items.employee_id',$empIds)
+            ->groupBy('payroll_items.employee_id')
+            ->get();
+        $ytd = collect($ytdRows)->keyBy('employee_id');
         $company = \App\Models\CompanyProfile::where('business_id',$bizId)->first();
         $companyArr = $company ? [
             'name' => $company->name,
@@ -145,8 +161,9 @@ class PayrollController extends Controller
         ] : config('company');
         $filename = sprintf('payroll-%04d-%02d-payslips.pdf', $run->period_year, $run->period_month);
         $engine = $request->get('engine', config('documents.pdf_engine', 'dompdf'));
+        $asOfDate = optional($run->processed_at)->toDateString() ?? now()->toDateString();
         if ($engine === 'mpdf') {
-            $html = view('hr.payslips_pdf', compact('run','items','companyArr') + ['engine'=>'mpdf'])->render();
+            $html = view('hr.payslips_pdf', compact('run','items','companyArr','ytd','asOfDate') + ['engine'=>'mpdf'])->render();
             $tmpDir = storage_path('app/mpdf'); if (!is_dir($tmpDir)) { @mkdir($tmpDir, 0755, true); }
             $mpdf = new \Mpdf\Mpdf(['mode'=>'utf-8','tempDir'=>$tmpDir,'format'=>'A4','default_font_size'=>13,'default_font'=>'garuda']);
             $mpdf->autoScriptToLang = true; $mpdf->autoLangToFont = true; $mpdf->WriteHTML($html);
@@ -155,7 +172,7 @@ class PayrollController extends Controller
             }
             return response($mpdf->Output($filename, \Mpdf\Output\Destination::STRING_RETURN), 200, ['Content-Type'=>'application/pdf','Content-Disposition'=>'inline; filename="'.$filename.'"']);
         }
-        $pdf = Pdf::setOptions(['isHtml5ParserEnabled'=>true,'isRemoteEnabled'=>true])->loadView('hr.payslips_pdf', [ 'run'=>$run, 'items'=>$items, 'companyArr'=>$companyArr ]);
+        $pdf = Pdf::setOptions(['isHtml5ParserEnabled'=>true,'isRemoteEnabled'=>true])->loadView('hr.payslips_pdf', [ 'run'=>$run, 'items'=>$items, 'companyArr'=>$companyArr, 'ytd'=>$ytd, 'asOfDate'=>$asOfDate ]);
         if ($request->boolean('dl') || $request->boolean('download')) { return $pdf->download($filename); }
         return $pdf->stream($filename, ['Attachment' => false]);
     }
