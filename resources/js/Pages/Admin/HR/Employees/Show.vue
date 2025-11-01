@@ -57,8 +57,9 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { usePage, router } from '@inertiajs/vue3'
 import { computed } from 'vue'
+import { confirmDialog } from '@/utils/swal'
 const item = computed(()=> usePage().props.item)
 function fmt(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) }
-function deactivate(){ if(confirm('ปิดใช้งานพนักงานนี้?')) router.delete(`/admin/hr/employees/${item.value.id}`) }
-function restore(){ if(confirm('เปิดใช้งานพนักงานนี้?')) router.post(`/admin/hr/employees/${item.value.id}/restore`) }
+async function deactivate(){ if(await confirmDialog('ปิดใช้งานพนักงานนี้?')) router.delete(`/admin/hr/employees/${item.value.id}`) }
+async function restore(){ if(await confirmDialog('เปิดใช้งานพนักงานนี้?')) router.post(`/admin/hr/employees/${item.value.id}/restore`) }
 </script>

@@ -84,6 +84,9 @@ class QuotesController extends Controller
     {
         $bizId = (int) ($request->user()->business_id ?? 1);
         $item = Quote::where('business_id',$bizId)->with(['items','customer'])->findOrFail($id);
+        if ($request->wantsJson()) {
+            return response()->json(['item' => $item]);
+        }
         return Inertia::render('Admin/Documents/Quotes/Show', ['item'=>$item]);
     }
     public function pdf(Request $request, int $id)

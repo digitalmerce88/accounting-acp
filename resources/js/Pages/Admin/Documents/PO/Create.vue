@@ -99,6 +99,7 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { router } from '@inertiajs/vue3'
 import { reactive, computed, ref } from 'vue'
+import { alertInfo } from '@/utils/swal'
 
 const form = reactive({
   issue_date: new Date().toISOString().slice(0,10),
@@ -130,9 +131,9 @@ async function searchVendor(){
       form.vendor.tax_id = v.tax_id || ''
       form.vendor.phone = v.phone || ''
       form.vendor.address = v.address || ''
-      alert('พบข้อมูลและกรอกให้แล้ว')
+      await alertInfo('พบข้อมูลและกรอกให้แล้ว')
     }else{
-      alert('ไม่พบข้อมูล สามารถกรอกสร้างใหม่ได้')
+      await alertInfo('ไม่พบข้อมูล สามารถกรอกสร้างใหม่ได้')
     }
   }catch(e){ console.error(e) }
 }

@@ -136,6 +136,19 @@ class TransactionsController extends Controller
         $lines = [];
         if ($tx->journal_entry_id) {
             $lines = JournalLine::where('entry_id', $tx->journal_entry_id)->orderBy('id')->get();
+            // attach account names for frontend convenience
+            $acctNames = \App\Models\Account::whereIn('id', $lines->pluck('account_id')->unique())->pluck('name','id')->toArray();
+            $lines = $lines->map(function($ln) use ($acctNames) {
+                $ln->account_name = $acctNames[$ln->account_id] ?? null;
+                return $ln;
+            });
+        }
+        if ($request->wantsJson()) {
+            return response()->json([
+                'item' => $tx,
+                'attachments' => $attachments,
+                'lines' => $lines,
+            ]);
         }
         return Inertia::render('Admin/Accounting/'.ucfirst($kind).'/Show', [
             'item' => $tx,

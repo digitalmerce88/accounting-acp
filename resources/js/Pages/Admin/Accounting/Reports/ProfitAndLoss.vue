@@ -29,6 +29,7 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { usePage, router } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
+import { confirmDialog } from '@/utils/swal'
 
 const p = usePage().props
 const from = computed(()=> p.from)
@@ -42,13 +43,17 @@ function format(n){
 
 const busy = ref(false)
 function closeMonth(){
-  if(!confirm('ยืนยันการปิดงวดเดือนนี้?')) return
-  busy.value = true
-  const today = new Date()
-  const payload = { year: today.getFullYear(), month: today.getMonth()+1 }
-  router.post('/admin/accounting/close/month', payload, {
-    preserveScroll: true,
-    onFinish: () => { busy.value = false },
-  })
+  // use SweetAlert confirm
+  (async () => {
+    const confirmed = await confirmDialog('ยืนยันการปิดงวดเดือนนี้?')
+    if(!confirmed) return
+    busy.value = true
+    const today = new Date()
+    const payload = { year: today.getFullYear(), month: today.getMonth()+1 }
+    router.post('/admin/accounting/close/month', payload, {
+      preserveScroll: true,
+      onFinish: () => { busy.value = false },
+    })
+  })()
 }
 </script>

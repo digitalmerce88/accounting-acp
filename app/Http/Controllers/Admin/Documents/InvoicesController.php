@@ -118,6 +118,9 @@ class InvoicesController extends Controller
     {
         $bizId = (int) ($request->user()->business_id ?? 1);
         $item = Invoice::where('business_id',$bizId)->with(['items','customer'])->findOrFail($id);
+        if ($request->wantsJson()) {
+            return response()->json(['item' => $item]);
+        }
         return Inertia::render('Admin/Documents/Invoices/Show', ['item'=>$item]);
     }
 

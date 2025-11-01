@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Log;
 
 class PayrollController extends Controller
 {
@@ -44,6 +43,9 @@ class PayrollController extends Controller
         $run = PayrollRun::where('business_id',$bizId)->findOrFail($id);
         $items = PayrollItem::where('payroll_run_id',$run->id)->with('employee:id,name,emp_code,position')
             ->orderBy('id')->get();
+        if ($request->wantsJson()) {
+            return response()->json(['run' => $run, 'items' => $items]);
+        }
         return Inertia::render('Admin/HR/Payroll/Show', [
             'run' => $run,
             'items' => $items,
@@ -166,40 +168,26 @@ class PayrollController extends Controller
         if ($engine === 'mpdf') {
             $html = view('hr.payslips_pdf', compact('run','items','companyArr','ytd','asOfDate') + ['engine'=>'mpdf'])->render();
             $tmpDir = storage_path('app/mpdf'); if (!is_dir($tmpDir)) { @mkdir($tmpDir, 0755, true); }
-            try {
-                // Use separate format + orientation to avoid mPDF parsing issues with 'A5-L'
-                $mpdf = new \Mpdf\Mpdf([
-                    'mode' => 'utf-8',
-                    'tempDir' => $tmpDir,
-                    'format' => 'A5',
-                    'orientation' => 'L',
-                    'margin_top' => 10,
-                    'margin_bottom' => 10,
-                    'margin_left' => 12,
-                    'margin_right' => 12,
-                    'default_font_size' => 11,
-                    'default_font' => 'garuda',
-                ]);
-                $mpdf->autoScriptToLang = true;
-                $mpdf->autoLangToFont = true;
-                $mpdf->WriteHTML($html);
-                if ($request->boolean('dl') || $request->boolean('download')) {
-                    return response($mpdf->Output($filename, \Mpdf\Output\Destination::STRING_RETURN), 200, ['Content-Type'=>'application/pdf','Content-Disposition'=>'attachment; filename="'.$filename.'"']);
-                }
-                return response($mpdf->Output($filename, \Mpdf\Output\Destination::STRING_RETURN), 200, ['Content-Type'=>'application/pdf','Content-Disposition'=>'inline; filename="'.$filename.'"']);
-            } catch (\Throwable $e) {
-                // Log and fallback to DomPDF
-                Log::error('mPDF failed for payslipsPdf: '.$e->getMessage(), ['exception' => $e]);
-                // Try DomPDF as a fallback
-                try {
-                    $pdf = Pdf::setOptions(['isHtml5ParserEnabled'=>true,'isRemoteEnabled'=>true])->setPaper('a5', 'landscape')->loadView('hr.payslips_pdf', [ 'run'=>$run, 'items'=>$items, 'companyArr'=>$companyArr, 'ytd'=>$ytd, 'asOfDate'=>$asOfDate ]);
-                    if ($request->boolean('dl') || $request->boolean('download')) { return $pdf->download($filename); }
-                    return $pdf->stream($filename, ['Attachment' => false]);
-                } catch (\Throwable $e2) {
-                    Log::error('DomPDF fallback failed for payslipsPdf: '.$e2->getMessage(), ['exception' => $e2]);
-                    abort(500, 'PDF generation failed');
-                }
+            // Use separate format + orientation to avoid mPDF parsing issues with 'A5-L'
+            $mpdf = new \Mpdf\Mpdf([
+                'mode' => 'utf-8',
+                'tempDir' => $tmpDir,
+                'format' => 'A5',
+                'orientation' => 'L',
+                'margin_top' => 10,
+                'margin_bottom' => 10,
+                'margin_left' => 12,
+                'margin_right' => 12,
+                'default_font_size' => 11,
+                'default_font' => 'garuda',
+            ]);
+            $mpdf->autoScriptToLang = true;
+            $mpdf->autoLangToFont = true;
+            $mpdf->WriteHTML($html);
+            if ($request->boolean('dl') || $request->boolean('download')) {
+                return response($mpdf->Output($filename, \Mpdf\Output\Destination::STRING_RETURN), 200, ['Content-Type'=>'application/pdf','Content-Disposition'=>'attachment; filename="'.$filename.'"']);
             }
+            return response($mpdf->Output($filename, \Mpdf\Output\Destination::STRING_RETURN), 200, ['Content-Type'=>'application/pdf','Content-Disposition'=>'inline; filename="'.$filename.'"']);
         }
         $pdf = Pdf::setOptions(['isHtml5ParserEnabled'=>true,'isRemoteEnabled'=>true])->setPaper('a5', 'landscape')->loadView('hr.payslips_pdf', [ 'run'=>$run, 'items'=>$items, 'companyArr'=>$companyArr, 'ytd'=>$ytd, 'asOfDate'=>$asOfDate ]);
         if ($request->boolean('dl') || $request->boolean('download')) { return $pdf->download($filename); }

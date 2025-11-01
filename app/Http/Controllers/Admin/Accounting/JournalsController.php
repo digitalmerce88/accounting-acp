@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin\Accounting;
 
 use App\Domain\Accounting\Services\JournalService;
 use App\Http\Controllers\Controller;
-use App\Models\{JournalEntry,JournalLine};
+use App\Models\{JournalEntry,JournalLine,Account};
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +34,12 @@ class JournalsController extends Controller
         if (request()->wantsJson()) {
             $e = JournalEntry::findOrFail($id);
             $lines = JournalLine::where('entry_id',$id)->orderBy('id')->get();
+            // attach account name for each line to make frontend rendering simpler
+            $acctNames = Account::whereIn('id', $lines->pluck('account_id')->unique())->pluck('name','id')->toArray();
+            $lines = $lines->map(function($ln) use ($acctNames) {
+                $ln->account_name = $acctNames[$ln->account_id] ?? null;
+                return $ln;
+            });
             return response()->json(['entry'=>$e,'lines'=>$lines]);
         }
         return Inertia::render('Admin/Accounting/Journals/Edit', ['id'=>$id]);
@@ -95,6 +101,11 @@ class JournalsController extends Controller
             // Load entry only; lines are fetched separately below
             $e = JournalEntry::findOrFail($id);
             $lines = JournalLine::where('entry_id',$id)->orderBy('id')->get();
+            $acctNames = Account::whereIn('id', $lines->pluck('account_id')->unique())->pluck('name','id')->toArray();
+            $lines = $lines->map(function($ln) use ($acctNames) {
+                $ln->account_name = $acctNames[$ln->account_id] ?? null;
+                return $ln;
+            });
             return response()->json(['entry'=>$e,'lines'=>$lines]);
         }
         return Inertia::render('Admin/Accounting/Journals/Show', ['id'=>$id]);

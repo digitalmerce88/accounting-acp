@@ -82,6 +82,12 @@ class EmployeesController extends Controller
     {
         $bizId = (int) ($request->user()->business_id ?? 1);
         $e = Employee::where('business_id',$bizId)->findOrFail($id);
+        // Support JSON response for modal previews
+        if ($request->wantsJson()) {
+            return response()->json([
+                'item' => $e,
+            ]);
+        }
         return Inertia::render('Admin/HR/Employees/Show', [
             'item' => $e,
         ]);

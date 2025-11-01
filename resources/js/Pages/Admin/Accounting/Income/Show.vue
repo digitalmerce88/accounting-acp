@@ -39,7 +39,7 @@
         </thead>
         <tbody>
           <tr v-for="ln in lines" :key="ln.id">
-            <td class="p-2 border">{{ ln.account_id }}</td>
+            <td class="p-2 border">{{ ln.account_name || ln.account_id }}</td>
             <td class="p-2 border text-right">{{ fmt(ln.debit) }}</td>
             <td class="p-2 border text-right">{{ fmt(ln.credit) }}</td>
           </tr>
@@ -67,10 +67,11 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { usePage, router } from '@inertiajs/vue3'
 import { fmtDMY } from '@/utils/format'
 import { computed } from 'vue'
+import { confirmDialog } from '@/utils/swal'
 const p = usePage().props
 const item = computed(()=> p.item)
 const lines = computed(()=> p.lines || [])
 const attachments = computed(()=> p.attachments || [])
 function fmt(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) }
-function del(){ if(confirm('ยืนยันลบรายการนี้?')) router.delete(`/admin/accounting/income/${item.value.id}`) }
+async function del(){ if(await confirmDialog('ยืนยันลบรายการนี้?')) router.delete(`/admin/accounting/income/${item.value.id}`) }
 </script>

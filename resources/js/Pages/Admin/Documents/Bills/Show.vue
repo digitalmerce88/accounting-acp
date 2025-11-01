@@ -38,8 +38,9 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { usePage, router } from '@inertiajs/vue3'
 import { computed } from 'vue'
 import { fmtDMY } from '@/utils/format'
+import { confirmDialog } from '@/utils/swal'
 const item = computed(()=> usePage().props.item)
 function fmt(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) }
-function pay(){ if(confirm('จ่ายบิลนี้?')) router.post(`/admin/documents/bills/${item.value.id}/pay`, { date: new Date().toISOString().slice(0,10) }) }
-function onDelete(){ if(confirm('ลบเอกสารนี้?')) router.delete(`/admin/documents/bills/${item.value.id}`) }
+async function pay(){ if(await confirmDialog('จ่ายบิลนี้?')) router.post(`/admin/documents/bills/${item.value.id}/pay`, { date: new Date().toISOString().slice(0,10) }) }
+async function onDelete(){ if(await confirmDialog('ลบเอกสารนี้?')) router.delete(`/admin/documents/bills/${item.value.id}`) }
 </script>

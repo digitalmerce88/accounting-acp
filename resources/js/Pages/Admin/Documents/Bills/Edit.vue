@@ -99,6 +99,7 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { usePage, router } from '@inertiajs/vue3'
 import { reactive, computed, ref } from 'vue'
+import { alertInfo } from '@/utils/swal'
 const item = usePage().props.item
 const form = reactive({
   id: item.id,
@@ -129,9 +130,9 @@ async function searchVendor(){
   form.vendor.tax_id = v.tax_id || ''
       form.vendor.phone = v.phone || ''
       form.vendor.address = v.address || ''
-      alert('พบข้อมูลและกรอกให้แล้ว')
+  alertInfo('พบข้อมูลและกรอกให้แล้ว')
     }else{
-      alert('ไม่พบข้อมูล สามารถกรอกสร้างใหม่ได้')
+  alertInfo('ไม่พบข้อมูล สามารถกรอกสร้างใหม่ได้')
     }
   }catch(e){ console.error(e) }
 }

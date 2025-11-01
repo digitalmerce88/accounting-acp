@@ -82,6 +82,9 @@ class PurchaseOrdersController extends Controller
     {
         $bizId = (int) ($request->user()->business_id ?? 1);
         $item = PurchaseOrder::where('business_id',$bizId)->with(['items','vendor'])->findOrFail($id);
+        if ($request->wantsJson()) {
+            return response()->json(['item' => $item]);
+        }
         return Inertia::render('Admin/Documents/PO/Show', ['item'=>$item]);
     }
     public function pdf(Request $request, int $id)

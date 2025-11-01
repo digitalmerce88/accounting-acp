@@ -42,6 +42,7 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { reactive, computed, ref, watch } from 'vue'
 import { usePage } from '@inertiajs/vue3'
+import { alertError } from '@/utils/swal'
 
 const page = usePage()
 const users = computed(() => page.props.users || [])
@@ -79,7 +80,7 @@ async function save(user) {
     })
     if (!res.ok) {
       console.error('Save failed', await res.text())
-      alert('Failed to save')
+      await alertError('บันทึกไม่สำเร็จ')
     }
   } finally {
     saving[user.id] = false

@@ -46,11 +46,12 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { usePage, router } from '@inertiajs/vue3'
 import { computed } from 'vue'
+import { confirmDialog, alertSuccess, alertError } from '@/utils/swal'
 const run = computed(()=> usePage().props.run)
 const items = computed(()=> usePage().props.items || [])
 function fmt(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) }
-function lock(){ if(confirm('ล็อกรอบนี้?')) router.post(`/admin/hr/payroll/${run.value.id}/lock`) }
-function pay(){ if(confirm('จ่ายเงินเดือนรอบนี้?')) router.post(`/admin/hr/payroll/${run.value.id}/pay`, { date: new Date().toISOString().slice(0,10) }) }
-function unlock(){ if(confirm('ปลดล็อครอบนี้?')) router.post(`/admin/hr/payroll/${run.value.id}/unlock`) }
-function del(){ if(confirm('ลบรอบนี้? จะลบรายการพนักงานในรอบด้วย')) router.delete(`/admin/hr/payroll/${run.value.id}`) }
+async function lock(){ if(await confirmDialog('ล็อกรอบนี้?')) router.post(`/admin/hr/payroll/${run.value.id}/lock`) }
+async function pay(){ if(await confirmDialog('จ่ายเงินเดือนรอบนี้?')) router.post(`/admin/hr/payroll/${run.value.id}/pay`, { date: new Date().toISOString().slice(0,10) }) }
+async function unlock(){ if(await confirmDialog('ปลดล็อครอบนี้?')) router.post(`/admin/hr/payroll/${run.value.id}/unlock`) }
+async function del(){ if(await confirmDialog('ลบรอบนี้? จะลบรายการพนักงานในรอบด้วย')) router.delete(`/admin/hr/payroll/${run.value.id}`) }
 </script>

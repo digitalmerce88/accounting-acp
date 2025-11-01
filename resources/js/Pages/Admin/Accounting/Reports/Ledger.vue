@@ -26,7 +26,7 @@
     <div class="mt-4 overflow-x-auto">
       <table class="min-w-full border text-sm">
         <thead class="bg-gray-50">
-          <tr><th class="p-2 border text-left">วันที่</th><th class="p-2 border text-left">เลขที่รายการ</th><th class="p-2 border text-left">บันทึก</th><th class="p-2 border text-right">เดบิต</th><th class="p-2 border text-right">เครดิต</th><th class="p-2 border text-right">ยอดคงเหลือ</th></tr>
+          <tr><th class="p-2 border text-left">วันที่</th><th class="p-2 border text-left">บัญชี</th><th class="p-2 border text-left">บันทึก</th><th class="p-2 border text-right">เดบิต</th><th class="p-2 border text-right">เครดิต</th><th class="p-2 border text-right">ยอดคงเหลือ</th></tr>
         </thead>
         <tbody>
           <tr v-for="r in rows" :key="r[1]">

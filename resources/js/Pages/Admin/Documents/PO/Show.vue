@@ -31,7 +31,8 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { usePage, router } from '@inertiajs/vue3'
 import { computed } from 'vue'
 import { fmtDMY } from '@/utils/format'
+import { confirmDialog } from '@/utils/swal'
 const item = computed(()=> usePage().props.item)
 function fmt(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) }
-function onDelete(){ if(confirm('ลบเอกสารนี้?')) router.delete(`/admin/documents/po/${item.value.id}`) }
+async function onDelete(){ if(await confirmDialog('ลบเอกสารนี้?')) router.delete(`/admin/documents/po/${item.value.id}`) }
 </script>

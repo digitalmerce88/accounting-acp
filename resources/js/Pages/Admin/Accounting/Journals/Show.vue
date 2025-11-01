@@ -20,7 +20,7 @@
           </thead>
           <tbody>
             <tr v-for="ln in lines" :key="ln.id">
-              <td class="p-2 border">{{ ln.account_id }}</td>
+              <td class="p-2 border">{{ ln.account_name || ln.account_id }}</td>
               <td class="p-2 border text-right">{{ money(ln.debit) }}</td>
               <td class="p-2 border text-right">{{ money(ln.credit) }}</td>
             </tr>
