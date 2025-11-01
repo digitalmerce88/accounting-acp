@@ -6,7 +6,7 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <div class="text-xs text-gray-500">วันที่</div>
-          <div class="font-medium">{{ entry.date }}</div>
+          <div class="font-medium">{{ fmtDMY(entry.date) }}</div>
         </div>
         <div class="md:col-span-2">
           <div class="text-xs text-gray-500">บันทึก</div>
@@ -34,6 +34,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { onMounted, ref } from 'vue'
+import { fmtDMY } from '@/utils/format'
 import axios from 'axios'
 
 const props = defineProps({ id: Number })

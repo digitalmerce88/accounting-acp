@@ -16,4 +16,9 @@ class PurchaseOrder extends Model
     protected $casts = [ 'issue_date' => 'date' ];
 
     public function items() { return $this->hasMany(PoItem::class); }
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
+    }
 }

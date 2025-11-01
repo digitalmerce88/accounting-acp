@@ -6,7 +6,7 @@
         <div class="font-medium mb-2">ผู้ขาย/ผู้รับเงิน (Vendor)</div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div class="md:col-span-2">
-            <label class="block text-gray-600 mb-1">ค้นหาจาก เลขผู้เสียภาษี / เลขบัตรประชาชน / เบอร์โทร</label>
+            <label class="block text-gray-600 mb-1">ค้นหาจาก เลขผู้เสียภาษี / เบอร์โทร</label>
             <div class="flex gap-2">
               <input v-model="vendorQuery" type="text" class="w-full border rounded p-2" placeholder="ระบุค่าหนึ่งค่า แล้วกดค้นหา" />
               <button type="button" @click="searchVendor" class="px-3 py-1 border rounded">ค้นหา</button>
@@ -16,20 +16,10 @@
             <label class="block text-gray-600 mb-1">ชื่อ</label>
             <input v-model="form.vendor.name" type="text" class="w-full border rounded p-2" placeholder="ชื่อบริษัท/บุคคล" />
           </div>
-          <div class="md:col-span-3">
-            <label class="block text-gray-600 mb-1">ระบุอย่างใดอย่างหนึ่ง</label>
-            <div class="flex items-center gap-4 text-sm">
-              <label class="inline-flex items-center gap-2"><input type="radio" value="tax" v-model="idChoice" /> <span>เลขผู้เสียภาษี</span></label>
-              <label class="inline-flex items-center gap-2"><input type="radio" value="national" v-model="idChoice" /> <span>เลขบัตรประชาชน</span></label>
-            </div>
-          </div>
+
           <div>
             <label class="block text-gray-600 mb-1">เลขผู้เสียภาษี</label>
-            <input :disabled="idChoice!=='tax'" v-model="form.vendor.tax_id" type="text" class="w-full border rounded p-2 disabled:bg-gray-100" />
-          </div>
-          <div>
-            <label class="block text-gray-600 mb-1">เลขบัตรประชาชน</label>
-            <input :disabled="idChoice!=='national'" v-model="form.vendor.national_id" type="text" class="w-full border rounded p-2 disabled:bg-gray-100" />
+            <input v-model="form.vendor.tax_id" type="text" class="w-full border rounded p-2" />
           </div>
           <div>
             <label class="block text-gray-600 mb-1">โทรศัพท์</label>
@@ -108,7 +98,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { usePage, router } from '@inertiajs/vue3'
-import { reactive, computed, ref, watch } from 'vue'
+import { reactive, computed, ref } from 'vue'
 const item = usePage().props.item
 const form = reactive({
   id: item.id,
@@ -116,16 +106,12 @@ const form = reactive({
   due_date: item.due_date,
   number: item.number,
   wht_rate_decimal: Number(item.wht_rate_decimal||0),
-  vendor: { name: item.vendor?.name||'', tax_id: item.vendor?.tax_id||'', national_id: item.vendor?.national_id||'', phone: item.vendor?.phone||'', address: item.vendor?.address||'' },
+  vendor: { name: item.vendor?.name||'', tax_id: item.vendor?.tax_id||'', phone: item.vendor?.phone||'', address: item.vendor?.address||'' },
   items: item.items?.map(it=>({ name: it.name, qty_decimal: Number(it.qty_decimal), unit_price_decimal: Number(it.unit_price_decimal), vat_rate_decimal: Number(it.vat_rate_decimal)})) || []
 })
 const vendorQuery = ref('')
 const processing = ref(false)
-const idChoice = ref((item.vendor?.tax_id ? 'tax' : (item.vendor?.national_id ? 'national' : 'tax')))
-watch(idChoice, (v)=>{
-  if(v==='tax'){ form.vendor.national_id = '' }
-  else { form.vendor.tax_id = '' }
-})
+// national_id no longer used
 const subtotal = computed(()=> form.items.reduce((s,it)=> s + (Number(it.qty_decimal||0)*Number(it.unit_price_decimal||0)), 0))
 const vat = computed(()=> form.items.reduce((s,it)=> s + (Number(it.qty_decimal||0)*Number(it.unit_price_decimal||0)) * (Number(it.vat_rate_decimal||0)/100), 0))
 const total = computed(()=> subtotal.value + vat.value)
@@ -140,8 +126,7 @@ async function searchVendor(){
     if(data && data.found){
       const v = data.item
       form.vendor.name = v.name || ''
-      form.vendor.tax_id = v.tax_id || ''
-      form.vendor.national_id = v.national_id || ''
+  form.vendor.tax_id = v.tax_id || ''
       form.vendor.phone = v.phone || ''
       form.vendor.address = v.address || ''
       alert('พบข้อมูลและกรอกให้แล้ว')
@@ -152,10 +137,6 @@ async function searchVendor(){
 }
 function submit(){
   processing.value = true
-  const t = (form.vendor.tax_id||'').trim()
-  const n = (form.vendor.national_id||'').trim()
-  if(!t && !n){ processing.value = false; alert('กรุณากรอก เลขผู้เสียภาษี หรือ เลขบัตรประชาชน อย่างใดอย่างหนึ่ง'); return }
-  if(t && n){ processing.value = false; alert('กรุณากรอกเพียงอย่างใดอย่างหนึ่ง ไม่ต้องกรอกทั้งสองช่อง'); return }
   router.put(`/admin/documents/bills/${form.id}`, form, { onFinish(){ processing.value = false } })
 }
 </script>

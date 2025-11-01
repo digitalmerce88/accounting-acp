@@ -11,7 +11,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
       <div>
         <div class="text-gray-500">วันที่</div>
-        <div class="font-medium">{{ item.date }}</div>
+  <div class="font-medium">{{ fmtDMY(item.date) }}</div>
       </div>
       <div>
         <div class="text-gray-500">จำนวน</div>
@@ -65,6 +65,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { usePage, router } from '@inertiajs/vue3'
+import { fmtDMY } from '@/utils/format'
 import { computed } from 'vue'
 const p = usePage().props
 const item = computed(()=> p.item)

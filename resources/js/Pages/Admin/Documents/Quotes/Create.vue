@@ -1,9 +1,9 @@
 <template>
   <AdminLayout>
-    <h1 class="text-xl font-semibold mb-4">แก้ไขใบแจ้งหนี้ {{ form.number || form.id }}</h1>
+    <h1 class="text-xl font-semibold mb-4">สร้างใบเสนอราคา</h1>
     <form @submit.prevent="submit" class="space-y-4 text-sm">
       <div class="p-3 border rounded">
-        <div class="font-medium mb-2">ข้อมูลผู้รับเอกสาร (ลูกค้า)</div>
+        <div class="font-medium mb-2">ข้อมูลลูกค้า</div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div class="md:col-span-2">
             <label class="block text-gray-600 mb-1">ค้นหาจาก เลขผู้เสียภาษี / เบอร์โทร</label>
@@ -42,11 +42,11 @@
         </div>
         <div>
           <label class="block text-gray-600 mb-1">เลขที่</label>
-          <input v-model="form.number" type="text" class="w-full border rounded p-2" />
+          <input v-model="form.number" type="text" class="w-full border rounded p-2" placeholder="เว้นว่างเพื่อรันภายหลัง" />
         </div>
-        <div class="flex items-center gap-2">
-          <input id="is_tax" v-model="form.is_tax_invoice" type="checkbox" class="h-4 w-4" />
-          <label for="is_tax" class="text-gray-700">ออกใบกำกับภาษี</label>
+        <div class="md:col-span-3">
+          <label class="block text-gray-600 mb-1">เรื่อง/หัวข้อ</label>
+          <input v-model="form.subject" type="text" class="w-full border rounded p-2" placeholder="เช่น ใบเสนอราคาโครงการ X" />
         </div>
       </div>
 
@@ -69,7 +69,7 @@
             </thead>
             <tbody>
               <tr v-for="(it,idx) in form.items" :key="idx" class="text-sm">
-                <td class="border p-1"><input v-model="it.name" class="w-full p-1 border rounded" /></td>
+                <td class="border p-1"><input v-model="it.name" class="w-full p-1 border rounded" placeholder="ระบุชื่อ" /></td>
                 <td class="border p-1"><input v-model.number="it.qty_decimal" type="number" step="0.01" min="0" class="w-full p-1 border rounded text-right" /></td>
                 <td class="border p-1"><input v-model.number="it.unit_price_decimal" type="number" step="0.01" min="0" class="w-full p-1 border rounded text-right" /></td>
                 <td class="border p-1"><input v-model.number="it.vat_rate_decimal" type="number" step="0.01" min="0" class="w-full p-1 border rounded text-right" /></td>
@@ -90,34 +90,35 @@
 
       <div class="flex gap-2">
         <button type="submit" class="px-3 py-1 bg-blue-700 text-white rounded" :disabled="processing">บันทึก</button>
-        <a :href="`/admin/documents/invoices/${form.id}`" class="px-3 py-1 border rounded">ยกเลิก</a>
+        <a href="/admin/documents/quotes" class="px-3 py-1 border rounded">ยกเลิก</a>
       </div>
     </form>
   </AdminLayout>
 </template>
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
-import { usePage, router } from '@inertiajs/vue3'
+import { router } from '@inertiajs/vue3'
 import { reactive, computed, ref } from 'vue'
-const item = usePage().props.item
+
 const form = reactive({
-  id: item.id,
-  issue_date: item.issue_date,
-  due_date: item.due_date,
-  number: item.number,
-  is_tax_invoice: !!item.is_tax_invoice,
-  customer: { name: item.customer?.name||'', tax_id: item.customer?.tax_id||'', phone: item.customer?.phone||'', address: item.customer?.address||'' },
-  items: item.items?.map(it=>({ name: it.name, qty_decimal: Number(it.qty_decimal), unit_price_decimal: Number(it.unit_price_decimal), vat_rate_decimal: Number(it.vat_rate_decimal)})) || []
+  issue_date: new Date().toISOString().slice(0,10),
+  due_date: '',
+  number: '',
+  subject: '',
+  customer: { name: '', tax_id: '', phone: '', address: '' },
+  items: [ { name: '', qty_decimal: 1, unit_price_decimal: 0, vat_rate_decimal: 0 } ],
 })
 const customerQuery = ref('')
 const processing = ref(false)
-// national_id no longer used
+
 const subtotal = computed(()=> form.items.reduce((s,it)=> s + (Number(it.qty_decimal||0)*Number(it.unit_price_decimal||0)), 0))
 const vat = computed(()=> form.items.reduce((s,it)=> s + (Number(it.qty_decimal||0)*Number(it.unit_price_decimal||0)) * (Number(it.vat_rate_decimal||0)/100), 0))
 const total = computed(()=> subtotal.value + vat.value)
+
 function addItem(){ form.items.push({ name: '', qty_decimal: 1, unit_price_decimal: 0, vat_rate_decimal: 0 }) }
 function removeItem(i){ form.items.splice(i,1) }
 function fmt(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) }
+
 async function searchCustomer(){
   if(!customerQuery.value) return
   try{
@@ -126,7 +127,7 @@ async function searchCustomer(){
     if(data && data.found){
       const c = data.item
       form.customer.name = c.name || ''
-  form.customer.tax_id = c.tax_id || ''
+      form.customer.tax_id = c.tax_id || ''
       form.customer.phone = c.phone || ''
       form.customer.address = c.address || ''
       alert('พบข้อมูลและกรอกให้แล้ว')
@@ -135,8 +136,9 @@ async function searchCustomer(){
     }
   }catch(e){ console.error(e) }
 }
+
 function submit(){
   processing.value = true
-  router.put(`/admin/documents/invoices/${form.id}`, form, { onFinish(){ processing.value = false } })
+  router.post('/admin/documents/quotes', form, { onFinish(){ processing.value = false } })
 }
 </script>

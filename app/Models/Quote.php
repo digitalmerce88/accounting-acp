@@ -18,4 +18,9 @@ class Quote extends Model
     ];
 
     public function items() { return $this->hasMany(QuoteItem::class); }
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
 }

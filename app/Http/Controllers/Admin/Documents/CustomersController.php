@@ -15,7 +15,7 @@ class CustomersController extends Controller
         if ($q === '') return response()->json(['found'=>false]);
         $item = Customer::where('business_id',$bizId)
             ->where(function($w) use($q){
-                $w->where('tax_id',$q)->orWhere('national_id',$q)->orWhere('phone',$q);
+                $w->where('tax_id',$q)->orWhere('phone',$q);
             })->first();
         return response()->json([
             'found' => (bool)$item,

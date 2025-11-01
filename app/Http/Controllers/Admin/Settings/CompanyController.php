@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\Admin\Settings;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Storage;
 use Inertia\Inertia;
+use Illuminate\Http\Request;
 use App\Models\CompanyProfile;
+use App\Http\Controllers\Controller;
 
 class CompanyController extends Controller
 {
@@ -36,7 +37,7 @@ class CompanyController extends Controller
 
         // handle logo upload/remove
         if (($data['remove_logo'] ?? false) && $item->logo_path) {
-            \Storage::disk('public')->delete($item->logo_path);
+            Storage::disk('public')->delete($item->logo_path);
             $item->logo_path = null;
         }
         if ($request->hasFile('logo')) {

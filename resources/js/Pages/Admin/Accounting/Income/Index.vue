@@ -16,7 +16,7 @@
         </thead>
         <tbody>
           <tr v-for="r in rows.data" :key="r.id">
-            <td class="p-2 border">{{ r.date }}</td>
+            <td class="p-2 border">{{ fmtDMY(r.date) }}</td>
             <td class="p-2 border">{{ r.memo }}</td>
             <td class="p-2 border text-right">{{ fmt(r.amount) }}</td>
             <td class="p-2 border">
@@ -39,6 +39,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { usePage, router } from '@inertiajs/vue3'
+import { fmtDMY } from '@/utils/format'
 import { computed } from 'vue'
 const rows = computed(()=> usePage().props.rows || {data:[]})
 function fmt(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) }

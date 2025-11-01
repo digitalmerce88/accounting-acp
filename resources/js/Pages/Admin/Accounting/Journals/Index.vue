@@ -16,7 +16,7 @@
         </thead>
         <tbody>
           <tr v-for="j in journals" :key="j.id" class="border-b hover:bg-gray-50">
-            <td class="p-2 border">{{ j.date }}</td>
+            <td class="p-2 border">{{ fmtDMY(j.date) }}</td>
             <td class="p-2 border">{{ j.memo }}</td>
             <td class="p-2 border">
               <div class="flex items-center gap-3">
@@ -47,6 +47,7 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { Link } from '@inertiajs/vue3'
 import { ref, onMounted } from 'vue'
+import { fmtDMY } from '@/utils/format'
 import axios from 'axios'
 const journals = ref([])
 const meta = ref({ current_page: 1, last_page: 1 })

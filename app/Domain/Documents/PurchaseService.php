@@ -38,6 +38,7 @@ class PurchaseService
             $whtAmount = round($net * $whtRate, 2);
         }
         if ($whtAmount > 0) {
+            $number = \App\Domain\Documents\Numbering::next('wht', $businessId, $date);
             WhtCertificate::create([
                 'business_id' => $businessId,
                 'vendor_id' => $bill->vendor_id,
@@ -46,8 +47,8 @@ class PurchaseService
                 'total_paid' => (float)$amount,
                 'wht_rate_decimal' => $whtRate,
                 'wht_amount' => $whtAmount,
-                'form_type' => 'pp1',
-                'number' => null,
+                'form_type' => '3',
+                'number' => $number,
                 'issued_at' => $date,
             ]);
         }

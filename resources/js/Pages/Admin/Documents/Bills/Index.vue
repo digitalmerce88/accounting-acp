@@ -18,7 +18,7 @@
         <tbody>
           <tr v-for="r in rows.data" :key="r.id">
             <td class="p-2 border">{{ r.number || r.id }}</td>
-            <td class="p-2 border">{{ r.bill_date }}</td>
+            <td class="p-2 border">{{ fmtDMY(r.bill_date) }}</td>
             <td class="p-2 border text-right">{{ fmt(r.total) }}</td>
             <td class="p-2 border">{{ r.status || '-' }}</td>
             <td class="p-2 border">
@@ -38,6 +38,7 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { usePage, router } from '@inertiajs/vue3'
 import { computed } from 'vue'
+import { fmtDMY } from '@/utils/format'
 const rows = computed(()=> usePage().props.rows || {data:[]})
 function fmt(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) }
 function pay(id){ if(confirm('จ่ายบิลนี้?')) router.post(`/admin/documents/bills/${id}/pay`, { date: new Date().toISOString().slice(0,10) }) }

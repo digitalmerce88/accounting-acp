@@ -145,6 +145,8 @@
         Route::prefix('documents')->name('admin.documents.')->group(function () {
             $inv = \App\Http\Controllers\Admin\Documents\InvoicesController::class;
             $bill = \App\Http\Controllers\Admin\Documents\BillsController::class;
+            $quo = \App\Http\Controllers\Admin\Documents\QuotesController::class;
+            $po  = \App\Http\Controllers\Admin\Documents\PurchaseOrdersController::class;
             $cus = \App\Http\Controllers\Admin\Documents\CustomersController::class;
             $ven = \App\Http\Controllers\Admin\Documents\VendorsController::class;
 
@@ -153,6 +155,7 @@
             Route::post('/invoices', [$inv,'store'])->name('invoices.store');
             Route::get('/invoices/{id}', [$inv,'show'])->name('invoices.show');
             Route::get('/invoices/{id}/pdf', [$inv,'pdf'])->name('invoices.pdf');
+            Route::get('/invoices/{id}/receipt.pdf', [$inv,'receipt'])->name('invoices.receipt');
             Route::get('/invoices/{id}/edit', [$inv,'edit'])->name('invoices.edit');
             Route::put('/invoices/{id}', [$inv,'update'])->name('invoices.update');
             Route::delete('/invoices/{id}', [$inv,'destroy'])->name('invoices.destroy');
@@ -166,6 +169,7 @@
             Route::post('/bills', [$bill,'store'])->name('bills.store');
             Route::get('/bills/{id}', [$bill,'show'])->name('bills.show');
             Route::get('/bills/{id}/pdf', [$bill,'pdf'])->name('bills.pdf');
+            Route::get('/bills/{id}/wht.pdf', [$bill,'whtPdf'])->name('bills.wht.pdf');
             Route::get('/bills/{id}/edit', [$bill,'edit'])->name('bills.edit');
             Route::put('/bills/{id}', [$bill,'update'])->name('bills.update');
             Route::delete('/bills/{id}', [$bill,'destroy'])->name('bills.destroy');
@@ -173,6 +177,21 @@
 
             // vendors quick search
             Route::get('/vendors/search', [$ven,'search'])->name('vendors.search');
+
+            // Quotes CRUD
+            Route::get('/quotes', [$quo,'index'])->name('quotes.index');
+            Route::get('/quotes/create', [$quo,'create'])->name('quotes.create');
+            Route::post('/quotes', [$quo,'store'])->name('quotes.store');
+            Route::get('/quotes/{id}', [$quo,'show'])->name('quotes.show');
+            // Quote & PO PDFs
+            Route::get('/quotes/{id}/pdf', [$quo,'pdf'])->name('quotes.pdf');
+
+            // Purchase Orders CRUD
+            Route::get('/po', [$po,'index'])->name('po.index');
+            Route::get('/po/create', [$po,'create'])->name('po.create');
+            Route::post('/po', [$po,'store'])->name('po.store');
+            Route::get('/po/{id}', [$po,'show'])->name('po.show');
+            Route::get('/po/{id}/pdf', [$po,'pdf'])->name('po.pdf');
         });
 
         // Admin Users management (admin only)

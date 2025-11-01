@@ -6,7 +6,7 @@
         <div class="font-medium mb-2">ข้อมูลผู้รับเอกสาร (ลูกค้า)</div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div class="md:col-span-2">
-            <label class="block text-gray-600 mb-1">ค้นหาจาก เลขผู้เสียภาษี / เลขบัตรประชาชน / เบอร์โทร</label>
+            <label class="block text-gray-600 mb-1">ค้นหาจาก เลขผู้เสียภาษี / เบอร์โทร</label>
             <div class="flex gap-2">
               <input v-model="customerQuery" type="text" class="w-full border rounded p-2" placeholder="ระบุค่าหนึ่งค่า แล้วกดค้นหา" />
               <button type="button" @click="searchCustomer" class="px-3 py-1 border rounded">ค้นหา</button>
@@ -16,24 +16,10 @@
             <label class="block text-gray-600 mb-1">ชื่อ</label>
             <input v-model="form.customer.name" type="text" class="w-full border rounded p-2" placeholder="ชื่อบริษัท/บุคคล" />
           </div>
-          <div class="md:col-span-3">
-            <label class="block text-gray-600 mb-1">ระบุอย่างใดอย่างหนึ่ง</label>
-            <div class="flex items-center gap-4 text-sm">
-              <label class="inline-flex items-center gap-2">
-                <input type="radio" value="tax" v-model="idChoice" /> <span>เลขผู้เสียภาษี</span>
-              </label>
-              <label class="inline-flex items-center gap-2">
-                <input type="radio" value="national" v-model="idChoice" /> <span>เลขบัตรประชาชน</span>
-              </label>
-            </div>
-          </div>
+
           <div>
             <label class="block text-gray-600 mb-1">เลขผู้เสียภาษี</label>
-            <input :disabled="idChoice!=='tax'" v-model="form.customer.tax_id" type="text" class="w-full border rounded p-2 disabled:bg-gray-100" />
-          </div>
-          <div>
-            <label class="block text-gray-600 mb-1">เลขบัตรประชาชน</label>
-            <input :disabled="idChoice!=='national'" v-model="form.customer.national_id" type="text" class="w-full border rounded p-2 disabled:bg-gray-100" />
+            <input v-model="form.customer.tax_id" type="text" class="w-full border rounded p-2" />
           </div>
           <div>
             <label class="block text-gray-600 mb-1">โทรศัพท์</label>
@@ -112,23 +98,19 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { router } from '@inertiajs/vue3'
-import { reactive, computed, ref, watch } from 'vue'
+import { reactive, computed, ref } from 'vue'
 
 const form = reactive({
   issue_date: new Date().toISOString().slice(0,10),
   due_date: '',
   number: '',
   is_tax_invoice: false,
-  customer: { name: '', tax_id: '', national_id: '', phone: '', address: '' },
+  customer: { name: '', tax_id: '', phone: '', address: '' },
   items: [ { name: '', qty_decimal: 1, unit_price_decimal: 0, vat_rate_decimal: 0 } ],
 })
 const customerQuery = ref('')
 const processing = ref(false)
-const idChoice = ref('tax')
-watch(idChoice, (v)=>{
-  if(v==='tax'){ form.customer.national_id = '' }
-  else { form.customer.tax_id = '' }
-})
+// national_id no longer used
 
 const subtotal = computed(()=> form.items.reduce((s,it)=> s + (Number(it.qty_decimal||0)*Number(it.unit_price_decimal||0)), 0))
 const vat = computed(()=> form.items.reduce((s,it)=> s + (Number(it.qty_decimal||0)*Number(it.unit_price_decimal||0)) * (Number(it.vat_rate_decimal||0)/100), 0))
@@ -146,8 +128,7 @@ async function searchCustomer(){
     if(data && data.found){
       const c = data.item
       form.customer.name = c.name || ''
-      form.customer.tax_id = c.tax_id || ''
-      form.customer.national_id = c.national_id || ''
+  form.customer.tax_id = c.tax_id || ''
       form.customer.phone = c.phone || ''
       form.customer.address = c.address || ''
       alert('พบข้อมูลและกรอกให้แล้ว')
@@ -159,11 +140,6 @@ async function searchCustomer(){
 
 function submit(){
   processing.value = true
-  // simple client guard: require one-of
-  const t = (form.customer.tax_id||'').trim()
-  const n = (form.customer.national_id||'').trim()
-  if(!t && !n){ processing.value = false; alert('กรุณากรอก เลขผู้เสียภาษี หรือ เลขบัตรประชาชน อย่างใดอย่างหนึ่ง'); return }
-  if(t && n){ processing.value = false; alert('กรุณากรอกเพียงอย่างใดอย่างหนึ่ง ไม่ต้องกรอกทั้งสองช่อง'); return }
   router.post('/admin/documents/invoices', form, {
     onFinish(){ processing.value = false }
   })
