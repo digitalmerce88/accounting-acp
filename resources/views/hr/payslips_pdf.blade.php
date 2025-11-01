@@ -19,9 +19,10 @@
                 font-style: normal;
             }
         @endif
+
         @page {
-            size: A5 landscape;
-            margin: 10mm 12mm 10mm 12mm;
+            /* size: A5 landscape;
+            margin: 10mm 12mm 10mm 12mm; */
         }
 
         body {
