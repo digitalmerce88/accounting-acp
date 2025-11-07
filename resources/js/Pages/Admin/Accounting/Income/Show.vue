@@ -53,10 +53,10 @@
     <div class="mt-6">
       <h3 class="font-semibold">ไฟล์แนบ</h3>
       <ul class="list-disc pl-5 text-sm">
-        <li v-for="a in attachments" :key="a.id">
-          <a :href="`/storage/${a.path}`" target="_blank" class="text-blue-700 underline">{{ a.path }}</a>
+        <li v-for="(a,idx) in attachmentsList" :key="a.id || idx">
+          <a :href="`/storage/${a.path}`" target="_blank" class="text-blue-700 underline">{{ a.name || a.path }}</a>
         </li>
-        <li v-if="!attachments || attachments.length===0" class="text-gray-500">-</li>
+        <li v-if="!attachmentsList || attachmentsList.length===0" class="text-gray-500">-</li>
       </ul>
     </div>
   </AdminLayout>
@@ -72,6 +72,8 @@ const p = usePage().props
 const item = computed(()=> p.item)
 const lines = computed(()=> p.lines || [])
 const attachments = computed(()=> p.attachments || [])
+const attachmentsJson = computed(()=> p.attachments_json || [])
+const attachmentsList = computed(()=> (attachmentsJson.value && attachmentsJson.value.length>0) ? attachmentsJson.value : attachments.value)
 function fmt(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) }
 async function del(){ if(await confirmDialog('ยืนยันลบรายการนี้?')) router.delete(`/admin/accounting/income/${item.value.id}`) }
 </script>

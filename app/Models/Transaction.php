@@ -11,7 +11,7 @@ class Transaction extends Model
 
     protected $fillable = [
         'business_id','kind','date','memo','amount','vat','wht','category_id','customer_id','vendor_id',
-        'payment_method','bank_account_id','price_input_mode','vat_applicable','wht_rate','status','journal_entry_id',
+        'payment_method','bank_account_id','price_input_mode','vat_applicable','wht_rate','status','journal_entry_id','attachments_json',
     ];
 
     protected $casts = [
@@ -21,6 +21,7 @@ class Transaction extends Model
         'vat' => 'decimal:2',
         'wht' => 'decimal:2',
         'wht_rate' => 'decimal:4',
+        'attachments_json' => 'array',
     ];
 
     public function attachments()

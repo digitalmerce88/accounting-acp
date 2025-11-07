@@ -107,21 +107,28 @@ class TransactionsController extends Controller
             'wht_rate' => $data['wht_rate'] ?? 0,
             'status' => 'posted',
             'journal_entry_id' => $entry->id,
+            'attachments_json' => null,
         ]);
 
         Log::info('Transaction created', ['transaction_id' => $tx->id, 'journal_entry_id' => $tx->journal_entry_id, 'kind' => $tx->kind]);
 
         if ($request->hasFile('files')) {
+            $json = [];
             foreach ($request->file('files') as $file) {
                 $path = $file->store('attachments', 'public');
-                $tx->attachments()->create([
-                    'business_id' => $bizId,
+                $meta = [
                     'path' => $path,
                     'mime' => $file->getClientMimeType(),
                     'size' => $file->getSize(),
-                ]);
+                    'name' => $file->getClientOriginalName(),
+                ];
+                // keep existing relation write for backward-compat
+                $tx->attachments()->create(array_merge(['business_id' => $bizId], $meta));
+                $json[] = $meta;
                 Log::info('Transaction attachment saved', ['transaction_id' => $tx->id, 'path' => $path]);
             }
+            $tx->attachments_json = $json;
+            $tx->save();
         }
 
         return redirect()->to('/admin/accounting/'.($kind === 'income' ? 'income' : 'expense'))
@@ -132,7 +139,8 @@ class TransactionsController extends Controller
     {
         $bizId = (int) ($request->user()->business_id ?? 1);
         $tx = Transaction::where('business_id',$bizId)->where('kind',$kind)->findOrFail($id);
-        $attachments = $tx->attachments()->orderBy('id')->get();
+    $attachments = $tx->attachments()->orderBy('id')->get();
+    $attachmentsJson = $tx->attachments_json ?: [];
         $lines = [];
         if ($tx->journal_entry_id) {
             $lines = JournalLine::where('entry_id', $tx->journal_entry_id)->orderBy('id')->get();
@@ -147,12 +155,14 @@ class TransactionsController extends Controller
             return response()->json([
                 'item' => $tx,
                 'attachments' => $attachments,
+                'attachments_json' => $attachmentsJson,
                 'lines' => $lines,
             ]);
         }
         return Inertia::render('Admin/Accounting/'.ucfirst($kind).'/Show', [
             'item' => $tx,
             'attachments' => $attachments,
+            'attachments_json' => $attachmentsJson,
             'lines' => $lines,
         ]);
     }
@@ -223,15 +233,20 @@ class TransactionsController extends Controller
         });
 
         if ($request->hasFile('files')) {
+            $existing = is_array($tx->attachments_json) ? $tx->attachments_json : [];
             foreach ($request->file('files') as $file) {
                 $path = $file->store('attachments', 'public');
-                $tx->attachments()->create([
-                    'business_id' => $bizId,
+                $meta = [
                     'path' => $path,
                     'mime' => $file->getClientMimeType(),
                     'size' => $file->getSize(),
-                ]);
+                    'name' => $file->getClientOriginalName(),
+                ];
+                $tx->attachments()->create(array_merge(['business_id' => $bizId], $meta));
+                $existing[] = $meta;
             }
+            $tx->attachments_json = $existing;
+            $tx->save();
         }
 
         return redirect()->to('/admin/accounting/'.($kind === 'income' ? 'income' : 'expense'))
