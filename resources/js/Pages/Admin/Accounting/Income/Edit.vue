@@ -63,8 +63,7 @@
         </div>
       </div>
       <div>
-        <label class="text-sm text-gray-600">แนบไฟล์ (เพิ่มใหม่)</label>
-        <input type="file" multiple @change="onFiles" class="mt-1" />
+        <FileDropzone v-model:modelValue="form.files" />
       </div>
       <div class="pt-2">
         <button type="submit" :disabled="busy" class="px-4 py-2 bg-blue-700 text-white rounded">{{ busy ? 'กำลังบันทึก...' : 'อัปเดต' }}</button>
@@ -76,6 +75,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { usePage, router } from '@inertiajs/vue3'
+import FileDropzone from '@/Components/FileDropzone.vue'
 import { computed, reactive, ref, watch, toRaw } from 'vue'
 const p = usePage().props
 const categories = computed(()=> p.categories || [])
@@ -88,7 +88,6 @@ watch(vatApplicable, v=>{ form.vat_applicable = !!v })
 const whtPercent = ref(Number(form.wht_rate||0)*100)
 watch(whtPercent, v=>{ form.wht_rate = Math.max(0, Number(v||0))/100 })
 const busy = ref(false)
-function onFiles(e){ form.files = Array.from(e.target.files||[]) }
 function submit(){
   busy.value = true
   const fd = new FormData()

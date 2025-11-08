@@ -73,8 +73,7 @@
       </div>
 
       <div>
-        <label class="text-sm text-gray-600">แนบไฟล์ (สลิป/ใบเสร็จ)</label>
-        <input type="file" multiple @change="onFiles" class="mt-1" />
+        <FileDropzone v-model:modelValue="form.files" />
       </div>
 
       <div class="pt-2">
@@ -89,6 +88,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { usePage, router } from '@inertiajs/vue3'
+import FileDropzone from '@/Components/FileDropzone.vue'
 import { computed, reactive, ref, watch, toRaw } from 'vue'
 
 const p = usePage().props
@@ -121,7 +121,6 @@ watch(whtPercent, v=>{ form.wht_rate = Math.max(0, Number(v||0))/100 })
 
 const busy = ref(false)
 const errors = reactive({})
-function onFiles(e){ form.files = Array.from(e.target.files||[]) }
 function submit(){
   busy.value = true
   console.log('Expense.submit clicked', toRaw(form))
