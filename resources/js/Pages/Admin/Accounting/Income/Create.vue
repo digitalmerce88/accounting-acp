@@ -50,14 +50,14 @@
           </select>
         </div>
         <div>
-          <label class="text-sm text-gray-600">หมวดมี VAT?</label>
+          <label class="text-sm text-gray-600">ลงบัญชี VAT?</label>
           <select v-model.number="vatApplicable" class="mt-1 border rounded px-2 py-1 w-full">
             <option :value="1">ใช่</option>
             <option :value="0">ไม่ใช่</option>
           </select>
         </div>
         <div>
-          <label class="text-sm text-gray-600">WHT (%)</label>
+          <label class="text-sm text-gray-600">หัก ณ ที่จ่าย (%)</label>
           <input type="number" step="0.01" v-model.number="whtPercent" class="mt-1 border rounded px-2 py-1 w-full" />
         </div>
       </div>
@@ -91,6 +91,7 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { usePage, router } from '@inertiajs/vue3'
 import FileDropzone from '@/Components/FileDropzone.vue'
 import { computed, reactive, ref, watch, toRaw } from 'vue'
+import { alertError, alertSuccess } from '@/utils/swal'
 
 const p = usePage().props
 const categories = computed(()=> p.categories || [])
@@ -154,12 +155,20 @@ function submit(){
   router.post('/admin/accounting/income', fd, {
     forceFormData: true,
     onSuccess: (page)=>{
-      console.log('Income.post onSuccess', page)
+      // show success message (flash from server will also be present)
+      const msg = page.props?.flash?.success || 'บันทึกสำเร็จ'
+      alertSuccess(msg)
+      // Inertia will already have redirected to the show page based on controller
     },
     onError: (resp)=>{
       console.error('Income.post onError', resp)
       if (resp && resp.errors) {
         Object.assign(errors, resp.errors)
+        // build a readable message
+        const msg = Object.entries(resp.errors).map(([k,v])=> `${k}: ${v.join(', ')}`).join('\n')
+        alertError(msg)
+      } else {
+        alertError('เกิดข้อผิดพลาด ไม่สามารถบันทึกได้')
       }
     },
     onFinish: ()=> busy.value=false,

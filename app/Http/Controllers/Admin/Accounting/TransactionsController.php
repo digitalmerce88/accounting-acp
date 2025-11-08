@@ -131,7 +131,8 @@ class TransactionsController extends Controller
             $tx->save();
         }
 
-        return redirect()->to('/admin/accounting/'.($kind === 'income' ? 'income' : 'expense'))
+        // After creating, redirect to the show view for the newly created transaction
+        return redirect()->to('/admin/accounting/'.($kind === 'income' ? "income/{$tx->id}" : "expense/{$tx->id}"))
             ->with('success', $kind === 'income' ? 'บันทึกรายรับเรียบร้อย' : 'บันทึกรายจ่ายเรียบร้อย');
     }
 
@@ -249,7 +250,8 @@ class TransactionsController extends Controller
             $tx->save();
         }
 
-        return redirect()->to('/admin/accounting/'.($kind === 'income' ? 'income' : 'expense'))
+        // After update, redirect back to the show view for this transaction
+        return redirect()->to('/admin/accounting/'.($kind === 'income' ? "income/{$tx->id}" : "expense/{$tx->id}"))
             ->with('success', 'อัปเดตรายการเรียบร้อย');
     }
 
