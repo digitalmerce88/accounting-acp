@@ -23,7 +23,11 @@
       <aside class="col-span-12 md:col-span-3 lg:col-span-2">
         <nav class="bg-white border rounded-md p-3 space-y-1">
           <Link href="/admin" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin$') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">แดชบอร์ด</Link>
-          <Link href="/admin/users" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/users') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ผู้ใช้</Link>
+          <div class="pt-2 text-xs font-semibold text-gray-500">เอกสารขาย/ซื้อ</div>
+          <Link href="/admin/documents/invoices" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/documents/invoices') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ใบแจ้งหนี้</Link>
+          <Link href="/admin/documents/bills" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/documents/bills') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ใบวางบิล</Link>
+          <Link href="/admin/documents/quotes" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/documents/quotes') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ใบเสนอราคา</Link>
+          <Link href="/admin/documents/po" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/documents/po') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ใบสั่งซื้อ</Link>
           <div class="pt-2 text-xs font-semibold text-gray-500">งานบัญชี</div>
           <Link href="/admin/accounting/income" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/income') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">รายรับ</Link>
           <Link href="/admin/accounting/expense" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/expense') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">รายจ่าย</Link>
@@ -40,13 +44,9 @@
           <div class="pt-2 text-xs font-semibold text-gray-500">บุคคลและเงินเดือน</div>
           <Link href="/admin/hr/employees" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/hr/employees') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">พนักงาน</Link>
           <Link href="/admin/hr/payroll" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/hr/payroll') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">รอบเงินเดือน</Link>
-          <div class="pt-2 text-xs font-semibold text-gray-500">เอกสารขาย/ซื้อ</div>
-          <Link href="/admin/documents/invoices" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/documents/invoices') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ใบแจ้งหนี้</Link>
-          <Link href="/admin/documents/bills" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/documents/bills') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ใบวางบิล</Link>
-          <Link href="/admin/documents/quotes" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/documents/quotes') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ใบเสนอราคา</Link>
-          <Link href="/admin/documents/po" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/documents/po') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ใบสั่งซื้อ</Link>
           <div class="pt-2 text-xs font-semibold text-gray-500">การตั้งค่า</div>
-          <Link href="/admin/settings/company" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/settings/company') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ข้อมูลบริษัท</Link>
+            <Link href="/admin/users" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/users') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ผู้ใช้</Link>
+            <Link href="/admin/settings/company" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/settings/company') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ข้อมูลบริษัท</Link>
         </nav>
       </aside>
 
