@@ -4,6 +4,11 @@
     <header class="bg-white border-b sticky top-0 z-40">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
         <div class="flex items-center gap-3">
+          <!-- Mobile hamburger -->
+          <button @click="sidebarOpen = !sidebarOpen" class="md:hidden p-2 -ml-2 rounded hover:bg-gray-100" aria-label="Open menu">
+            <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+          </button>
+
           <Link href="/dashboard" class="font-semibold">ACP</Link>
           <span class="text-gray-400">/</span>
           <span class="text-sm text-gray-600">แผงผู้ดูแลระบบ</span>
@@ -20,7 +25,8 @@
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-12 gap-6">
       <!-- Sidebar -->
-      <aside class="col-span-12 md:col-span-3 lg:col-span-2">
+      <!-- Desktop / Tablet: visible on md and up -->
+      <aside class="hidden md:block col-span-12 md:col-span-3 lg:col-span-2">
         <nav class="bg-white border rounded-md p-3 space-y-1">
           <Link href="/admin" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin$') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">แดชบอร์ด</Link>
           <div class="pt-2 text-xs font-semibold text-gray-500">เอกสารขาย/ซื้อ</div>
@@ -50,6 +56,48 @@
         </nav>
       </aside>
 
+      <!-- Mobile drawer (small screens) -->
+      <transition name="fade">
+        <div v-show="sidebarOpen" class="fixed inset-0 z-50 md:hidden" aria-hidden="!sidebarOpen">
+          <div class="absolute inset-0 bg-black bg-opacity-40" @click="sidebarOpen = false"></div>
+          <aside class="absolute left-0 top-0 h-full w-64 bg-white border-r shadow-lg p-3 overflow-y-auto">
+            <div class="flex items-center justify-between mb-3">
+              <div class="font-semibold">เมนู</div>
+              <button @click="sidebarOpen = false" class="p-1 rounded hover:bg-gray-100" aria-label="Close menu">
+                <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+            </div>
+            <nav class="space-y-1">
+              <Link href="/admin" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin$') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">แดชบอร์ด</Link>
+              <div class="pt-2 text-xs font-semibold text-gray-500">เอกสารขาย/ซื้อ</div>
+              <Link href="/admin/documents/invoices" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/documents/invoices') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ใบแจ้งหนี้</Link>
+              <Link href="/admin/documents/bills" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/documents/bills') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ใบวางบิล</Link>
+              <Link href="/admin/documents/quotes" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/documents/quotes') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ใบเสนอราคา</Link>
+              <Link href="/admin/documents/po" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/documents/po') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ใบสั่งซื้อ</Link>
+              <div class="pt-2 text-xs font-semibold text-gray-500">งานบัญชี</div>
+              <Link href="/admin/accounting/income" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/income') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">รายรับ</Link>
+              <Link href="/admin/accounting/expense" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/expense') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">รายจ่าย</Link>
+              <Link href="/admin/accounting/accounts" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/accounts') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ผังบัญชี</Link>
+              <Link href="/admin/accounting/journals" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/journals') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">บันทึกบัญชี</Link>
+              <div class="pt-2 text-xs font-semibold text-gray-500">รายงาน</div>
+              <Link href="/admin/accounting/reports/overview" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/reports/overview') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ภาพรวม</Link>
+              <Link href="/admin/accounting/reports/by-category" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/reports/by-category') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ตามหมวด/บัญชี</Link>
+              <Link href="/admin/accounting/reports/tax/purchase-vat" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/reports/tax/purchase-vat') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ภาษีซื้อ</Link>
+              <Link href="/admin/accounting/reports/tax/sales-vat" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/reports/tax/sales-vat') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ภาษีขาย</Link>
+              <Link href="/admin/accounting/reports/profit-and-loss" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/reports/profit-and-loss') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">กำไรขาดทุน</Link>
+              <Link href="/admin/accounting/reports/trial-balance" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/reports/trial-balance') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">งบทดลอง</Link>
+              <Link href="/admin/accounting/reports/ledger" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/accounting/reports/ledger') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">สมุดบัญชีแยกประเภท</Link>
+              <div class="pt-2 text-xs font-semibold text-gray-500">บุคคลและเงินเดือน</div>
+              <Link href="/admin/hr/employees" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/hr/employees') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">พนักงาน</Link>
+              <Link href="/admin/hr/payroll" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/hr/payroll') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">รอบเงินเดือน</Link>
+              <div class="pt-2 text-xs font-semibold text-gray-500">การตั้งค่า</div>
+                <Link href="/admin/users" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/users') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ผู้ใช้</Link>
+                <Link href="/admin/settings/company" class="block px-3 py-2 rounded-md text-sm" :class="isActive('/admin/settings/company') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'">ข้อมูลบริษัท</Link>
+            </nav>
+          </aside>
+        </div>
+      </transition>
+
       <!-- Content -->
       <main class="col-span-12 md:col-span-9 lg:col-span-10 space-y-3">
         <!-- Flash banners -->
@@ -68,9 +116,10 @@
 
 <script setup>
 import { Link, usePage } from '@inertiajs/vue3'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const page = usePage()
+const sidebarOpen = ref(false)
 const url = computed(() => page.url || (page?.value?.url ?? '/'))
 const flash = computed(() => page.props.flash || {})
 const csrfToken = computed(() => {
