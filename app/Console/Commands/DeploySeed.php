@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Artisan;
 
 class DeploySeed extends Command
 {
@@ -47,6 +48,15 @@ class DeploySeed extends Command
         $adminRole = Role::where('slug', 'admin')->first();
         if ($adminRole) {
             $user->roles()->syncWithoutDetaching([$adminRole->id]);
+        }
+
+        // Seed Chart of Accounts (idempotent)
+        $this->info('Seeding Chart of Accounts...');
+        try {
+            Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\CoASeeder', '--force' => true]);
+            $this->info('Chart of Accounts seeded.');
+        } catch (\Throwable $e) {
+            $this->error('Failed to seed Chart of Accounts: ' . $e->getMessage());
         }
 
         $this->info("Admin user created/updated: {$user->email}");
