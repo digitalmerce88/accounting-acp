@@ -45,7 +45,7 @@
           <a :href="`/admin/accounting/income/${item.id}/edit`" class="px-2 py-0.5 border rounded">แก้ไข </a>
         </div>
         <div v-if="loading" class="py-6 text-center text-gray-500">กำลังโหลด...</div>
-        <div v-else-if="item">
+    <div v-else-if="item">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
             <div><div class="text-gray-500">วันที่</div><div class="font-medium">{{ fmtDMY(item.date) }}</div></div>
             <div><div class="text-gray-500">จำนวน</div><div class="font-semibold">{{ fmt(item.amount) }}</div></div>
@@ -71,6 +71,15 @@
               </tbody>
             </table>
           </div>
+          <div class="mt-6">
+            <h3 class="font-semibold">ไฟล์แนบ</h3>
+            <ul class="list-disc pl-5 text-sm">
+              <li v-for="(a,idx) in attachmentsList" :key="a.id || idx">
+                <a :href="`/storage/${a.path}`" target="_blank" class="text-blue-700 underline">{{ a.name || a.path }}</a>
+              </li>
+              <li v-if="!attachmentsList || attachmentsList.length===0" class="text-gray-500">-</li>
+            </ul>
+          </div>
         </div>
       </div>
     </Modal>
@@ -95,6 +104,7 @@ async function del(id){
   const loading = ref(false)
   const item = ref(null)
   const lines = ref([])
+  const attachmentsList = ref([])
   function closeModal(){ showModal.value = false; item.value = null; lines.value = [] }
   async function openView(id){
     showModal.value = true
@@ -104,6 +114,8 @@ async function del(id){
       const data = await res.json()
       item.value = data.item
       lines.value = data.lines || []
+      // prefer attachments_json if present, else fall back to attachments relation
+      attachmentsList.value = (data.attachments_json && data.attachments_json.length>0) ? data.attachments_json : (data.attachments || [])
     } finally {
       loading.value = false
     }
