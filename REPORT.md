@@ -70,7 +70,7 @@ Alternatively, use Makefile:
 - Admin can manage user roles at `/admin/users` (requires role: admin).
 - UI built with Inertia/Vue; toggle role checkboxes and click Save per user.
 - API endpoints:
-   - GET /admin/users (JSON or Inertia)
+   - GET /admin/users (JSON or Iner.envtia)
    - PATCH /admin/users/{user}/roles (payload: { roles: string[] slugs })
 
 ## Admin Dashboard

@@ -97,6 +97,10 @@ function submit(){
   fd.append('_method','put')
   const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content')
   if (csrf) fd.append('_token', csrf)
+  ;(form.files||[]).forEach(f=>{
+    const file = (f && f.raw instanceof File) ? f.raw : (f instanceof File ? f : null)
+    if (file) fd.append('files[]', file)
+  })
   router.post(`/admin/accounting/expense/${item.value.id}`, fd, {
     forceFormData:true,
     onSuccess: (page) => {
@@ -104,9 +108,10 @@ function submit(){
       alertSuccess(msg)
     },
     onError: (resp) => {
-      if (resp && resp.errors) {
-        Object.assign(errors, resp.errors)
-        const msg = Object.entries(resp.errors).map(([k,v])=> `${k}: ${v.join(', ')}`).join('\n')
+      const errs = resp && (resp.errors || resp)
+      if (errs && typeof errs === 'object') {
+        Object.assign(errors, errs)
+        const msg = Object.entries(errs).map(([k,v])=> `${k}: ${Array.isArray(v)?v.join(', '):v}`).join('\n')
         alertError(msg)
       } else {
         alertError('เกิดข้อผิดพลาด ไม่สามารถอัปเดตได้')

@@ -151,7 +151,10 @@ function submit(){
     }
   })
   if (csrf) fd.append('_token', csrf)
-  ;(form.files||[]).forEach(f=> fd.append('files[]', f))
+  ;(form.files||[]).forEach(f=>{
+    const file = (f && f.raw instanceof File) ? f.raw : (f instanceof File ? f : null)
+    if (file) fd.append('files[]', file)
+  })
   router.post('/admin/accounting/income', fd, {
     forceFormData: true,
     onSuccess: (page)=>{
@@ -162,10 +165,11 @@ function submit(){
     },
     onError: (resp)=>{
       console.error('Income.post onError', resp)
-      if (resp && resp.errors) {
-        Object.assign(errors, resp.errors)
-        // build a readable message
-        const msg = Object.entries(resp.errors).map(([k,v])=> `${k}: ${v.join(', ')}`).join('\n')
+      // Inertia passes validation errors object directly; sometimes it's {errors: {...}}
+      const errs = resp && (resp.errors || resp)
+      if (errs && typeof errs === 'object') {
+        Object.assign(errors, errs)
+        const msg = Object.entries(errs).map(([k,v])=> `${k}: ${Array.isArray(v)?v.join(', '):v}`).join('\n')
         alertError(msg)
       } else {
         alertError('เกิดข้อผิดพลาด ไม่สามารถบันทึกได้')

@@ -63,19 +63,26 @@ watch(() => props.modelValue, (v) => {
 }, { deep: true })
 
 function attachMeta(f, idx){
-  // if it's a File (browser), create preview
+  // keep File instances intact by wrapping them into an object with `.raw` pointing to the File
+  // that way we can show preview/meta while still preserving the real File to send in FormData
+  if (f instanceof File) {
+    const out = {
+      __local_id: 'f' + (nextId++),
+      raw: f,
+      preview: null,
+      name: f.name,
+      size: f.size,
+      mime: f.type || null,
+    }
+    try { out.preview = URL.createObjectURL(f) } catch(e) { out.preview = null }
+    return out
+  }
+  // existing JSON metadata from server: {path,name,size,mime}
   const out = Object.assign({}, f)
   out.__local_id = out.__local_id ?? ('f' + (nextId++))
-  if (f instanceof File) {
-    try { out.preview = URL.createObjectURL(f) } catch(e) { out.preview = null }
-    out.name = f.name
-    out.size = f.size
-  } else {
-    // existing JSON metadata from server: {path,name,size,mime}
-    out.preview = null
-    out.name = out.name || out.path || 'file'
-    out.size = out.size || 0
-  }
+  out.preview = null
+  out.name = out.name || out.path || 'file'
+  out.size = out.size || 0
   return out
 }
 
@@ -109,11 +116,10 @@ function remove(idx){
 function emitModel(){
   // normalize to either File instances (for newly added) or metadata objects
   const out = filesLocal.value.map(f => {
-    // if original is File, it will have a File instance under .raw? but we stored File itself
-    // If f is a File, return it directly (it will be appended to FormData by parent)
+    // if f contains a raw File, return that File instance so parent can append it to FormData
+    if (f && f.raw instanceof File) return f.raw
+    // if the item itself is a File (unlikely now), return it
     if (f instanceof File) return f
-    // if it has a __file prop referencing File (unlikely), return that
-    if (f.raw instanceof File) return f.raw
     // otherwise it's metadata (from server) - keep as-is
     return {
       path: f.path,
@@ -127,7 +133,7 @@ function emitModel(){
 
 function humanSize(bytes){ if(!bytes) return '0 B'; const units=['B','KB','MB','GB']; let i=0; let v=bytes; while(v>=1024 && i<units.length-1){ v/=1024; i++ } return v.toFixed(v<10 && i>0?2:1)+ ' ' + units[i] }
 
-function isImage(f){ const m = f.mime || (f.type||''); return m.startsWith('image/') }
+function isImage(f){ const m = f && (f.mime || (f.type||'')); return (m||'').startsWith('image/') }
 
 onBeforeUnmount(()=>{
   filesLocal.value.forEach(f => { if (f.preview && f.preview.startsWith('blob:')) { try { URL.revokeObjectURL(f.preview) } catch(e){} } })
