@@ -22,4 +22,17 @@ class VendorsController extends Controller
             'item' => $item,
         ]);
     }
+
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'tax_id' => 'nullable|string|max:64',
+            'phone' => 'nullable|string|max:32',
+            'email' => 'nullable|email|max:255',
+        ]);
+        $bizId = $request->user()->business_id ?? 1;
+        $v = \App\Models\Vendor::create(array_merge($data, ['business_id' => $bizId]));
+        return response()->json(['ok' => true, 'item' => $v], 201);
+    }
 }

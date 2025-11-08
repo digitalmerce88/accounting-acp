@@ -30,9 +30,14 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <label class="text-sm text-gray-600">หมวดรายได้</label>
-          <select v-model.number="form.category_id" class="mt-1 border rounded px-2 py-1 w-full">
-            <option :value="c.id" v-for="c in categories" :key="c.id">{{ c.name }}</option>
-          </select>
+          <div class="mt-1 flex items-center gap-2">
+            <select v-model.number="form.category_id" class="border rounded px-2 py-1 w-full">
+              <option :value="c.id" v-for="c in categories" :key="c.id">{{ c.name }}</option>
+            </select>
+            <button type="button" @click="categoryModalOpen = true" class="p-2 bg-gray-100 rounded text-gray-600 hover:bg-gray-200" title="เพิ่มหมวด">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            </button>
+          </div>
         </div>
         <div>
           <label class="text-sm text-gray-600">จำนวนเงิน</label>
@@ -65,15 +70,47 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <label class="text-sm text-gray-600">ลูกค้า (ถ้ามี)</label>
-          <select v-model.number="form.customer_id" class="mt-1 border rounded px-2 py-1 w-full">
-            <option :value="null">-</option>
-            <option :value="c.id" v-for="c in customers" :key="c.id">{{ c.name }}</option>
-          </select>
+          <div class="mt-1 flex items-center gap-2">
+            <select v-model.number="form.customer_id" class="border rounded px-2 py-1 w-full">
+              <option :value="null">-</option>
+              <option :value="c.id" v-for="c in customers" :key="c.id">{{ c.name }}</option>
+            </select>
+            <button type="button" @click="customerModalOpen = true" class="p-2 bg-gray-100 rounded text-gray-600 hover:bg-gray-200" title="เพิ่มลูกค้า">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            </button>
+          </div>
         </div>
       </div>
 
       <div>
         <FileDropzone v-model:modelValue="form.files" />
+      </div>
+
+      <!-- Category modal -->
+      <div v-if="categoryModalOpen" class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="absolute inset-0 bg-black opacity-40" @click="categoryModalOpen=false"></div>
+        <div class="bg-white p-4 rounded shadow z-10 w-full max-w-md">
+          <h3 class="font-semibold mb-2">สร้างหมวดรายได้</h3>
+          <input v-model="newCategoryName" placeholder="ชื่อหมวด" class="w-full border rounded px-2 py-1 mb-2" />
+          <div class="flex justify-end gap-2">
+            <button class="px-3 py-1" @click="categoryModalOpen=false">ยกเลิก</button>
+            <button class="px-3 py-1 bg-blue-600 text-white rounded" @click="(async()=>{ await createCategory({name:newCategoryName.value, type:'income'}); })()">สร้าง</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Customer modal -->
+      <div v-if="customerModalOpen" class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="absolute inset-0 bg-black opacity-40" @click="customerModalOpen=false"></div>
+        <div class="bg-white p-4 rounded shadow z-10 w-full max-w-md">
+          <h3 class="font-semibold mb-2">สร้างลูกค้า</h3>
+          <input v-model="newCustomerName" placeholder="ชื่อลูกค้า" class="w-full border rounded px-2 py-1 mb-2" />
+          <input v-model="newCustomerPhone" placeholder="โทรศัพท์ (ไม่บังคับ)" class="w-full border rounded px-2 py-1 mb-2" />
+          <div class="flex justify-end gap-2">
+            <button class="px-3 py-1" @click="customerModalOpen=false">ยกเลิก</button>
+            <button class="px-3 py-1 bg-blue-600 text-white rounded" @click="(async()=>{ await createCustomer({name:newCustomerName.value, phone:newCustomerPhone.value}); })()">สร้าง</button>
+          </div>
+        </div>
       </div>
 
       <div class="pt-2">
@@ -94,8 +131,13 @@ import { computed, reactive, ref, watch, toRaw } from 'vue'
 import { alertError, alertSuccess } from '@/utils/swal'
 
 const p = usePage().props
-const categories = computed(()=> p.categories || [])
-const customers = computed(()=> p.customers || [])
+const categories = ref([...(p.categories || [])])
+const customers = ref([...(p.customers || [])])
+const categoryModalOpen = ref(false)
+const customerModalOpen = ref(false)
+const newCategoryName = ref('')
+const newCustomerName = ref('')
+const newCustomerPhone = ref('')
 const today = computed(()=> p.today)
 
 const form = reactive({
@@ -124,6 +166,50 @@ watch(whtPercent, v=>{ form.wht_rate = Math.max(0, Number(v||0))/100 })
 
 const busy = ref(false)
 const errors = reactive({})
+// functions to create category/customer inline
+async function createCategory(payload) {
+  try {
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+    const res = await fetch('/admin/accounting/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    if (!res.ok) throw res
+    const body = await res.json()
+    if (body && body.item) {
+      categories.value.unshift(body.item)
+      form.category_id = body.item.id
+      categoryModalOpen.value = false
+      alertSuccess('สร้างหมวดเรียบร้อย')
+    }
+  } catch (e) {
+    console.error('createCategory error', e)
+    alertError('ไม่สามารถสร้างหมวดได้')
+  }
+}
+
+async function createCustomer(payload) {
+  try {
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+    const res = await fetch('/admin/documents/customers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    if (!res.ok) throw res
+    const body = await res.json()
+    if (body && body.item) {
+      customers.value.unshift(body.item)
+      form.customer_id = body.item.id
+      customerModalOpen.value = false
+      alertSuccess('สร้างลูกค้าเรียบร้อย')
+    }
+  } catch (e) {
+    console.error('createCustomer error', e)
+    alertError('ไม่สามารถสร้างลูกค้าได้')
+  }
+}
 function submit(){
   busy.value = true
   console.log('Income.submit clicked', toRaw(form))

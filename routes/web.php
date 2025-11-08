@@ -85,6 +85,9 @@
             Route::put('/accounts/{id}', [AdminAccounts::class, 'update'])->name('accounts.update');
             Route::delete('/accounts/{id}', [AdminAccounts::class, 'destroy'])->name('accounts.destroy');
 
+            // Categories (AJAX create)
+            Route::post('/categories', [\App\Http\Controllers\Admin\Accounting\CategoriesController::class, 'store'])->name('categories.store');
+
             // Journals
             Route::get('/journals', [AdminJournals::class, 'index'])->name('journals.index');
             Route::get('/journals/create', [AdminJournals::class, 'create'])->name('journals.create');
@@ -186,6 +189,7 @@
 
             // customers quick search
             Route::get('/customers/search', [$cus,'search'])->name('customers.search');
+            Route::post('/customers', [$cus,'store'])->name('customers.store');
 
             Route::get('/bills', [$bill,'index'])->name('bills.index');
             Route::get('/bills/create', [$bill,'create'])->name('bills.create');
@@ -200,6 +204,7 @@
 
             // vendors quick search
             Route::get('/vendors/search', [$ven,'search'])->name('vendors.search');
+            Route::post('/vendors', [$ven,'store'])->name('vendors.store');
 
             // Quotes CRUD
             Route::get('/quotes', [$quo,'index'])->name('quotes.index');
