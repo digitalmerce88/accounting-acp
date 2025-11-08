@@ -30,15 +30,17 @@ const showingNavigationDropdown = ref(false);
                             </div>
 
                             <!-- Navigation Links -->
-                            <div
-                                class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex"
-                            >
-                                <NavLink
-                                    :href="route('dashboard')"
-                                    :active="route().current('dashboard')"
-                                >
-                                    Dashboard
-                                </NavLink>
+                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                                <template v-if="$page.props.menus && $page.props.menus.length">
+                                    <NavLink v-for="m in $page.props.menus" :key="m.route"
+                                        :href="route(m.route)"
+                                        :active="route().current(m.route)">
+                                        {{ m.label }}
+                                    </NavLink>
+                                </template>
+                                <template v-else>
+                                    <NavLink :href="route('dashboard')" :active="route().current('dashboard')">Dashboard</NavLink>
+                                </template>
                             </div>
                         </div>
 
@@ -140,12 +142,14 @@ const showingNavigationDropdown = ref(false);
                     class="sm:hidden"
                 >
                     <div class="space-y-1 pb-3 pt-2">
-                        <ResponsiveNavLink
-                            :href="route('dashboard')"
-                            :active="route().current('dashboard')"
-                        >
-                            Dashboard
-                        </ResponsiveNavLink>
+                        <template v-if="$page.props.menus && $page.props.menus.length">
+                            <ResponsiveNavLink v-for="m in $page.props.menus" :key="m.route" :href="route(m.route)" :active="route().current(m.route)">
+                                {{ m.label }}
+                            </ResponsiveNavLink>
+                        </template>
+                        <template v-else>
+                            <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')">Dashboard</ResponsiveNavLink>
+                        </template>
                     </div>
 
                     <!-- Responsive Settings Options -->

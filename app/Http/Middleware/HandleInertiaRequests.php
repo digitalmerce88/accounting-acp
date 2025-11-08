@@ -29,7 +29,7 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        return [
+        $shared = [
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
@@ -40,5 +40,24 @@ class HandleInertiaRequests extends Middleware
                 'error' => session('error'),
             ],
         ];
+
+        // Expose app name and company logo (if configured) for client UI
+        try {
+            $appName = config('app.name');
+            $bizId = (int) ($request->user()->business_id ?? 1);
+            $company = \App\Models\CompanyProfile::where('business_id', $bizId)->first();
+            $logoUrl = null;
+            if ($company && $company->logo_path) {
+                $logoUrl = url('/storage/' . ltrim($company->logo_path, '/'));
+            }
+            $shared['app'] = [
+                'name' => $appName,
+                'logo' => $logoUrl,
+            ];
+        } catch (\Throwable $e) {
+            // noop - don't break Inertia if company fetch fails
+        }
+
+        return $shared;
     }
 }

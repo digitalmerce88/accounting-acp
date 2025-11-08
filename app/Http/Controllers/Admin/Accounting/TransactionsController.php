@@ -107,14 +107,31 @@ class TransactionsController extends Controller
             'wht_rate' => $data['wht_rate'] ?? 0,
             'status' => 'posted',
             'journal_entry_id' => $entry->id,
-            'attachments_json' => null,
         ]);
 
         Log::info('Transaction created', ['transaction_id' => $tx->id, 'journal_entry_id' => $tx->journal_entry_id, 'kind' => $tx->kind]);
 
         if ($request->hasFile('files')) {
-            $json = [];
-            foreach ($request->file('files') as $file) {
+            // Flatten potential nested arrays and dedupe uploads (some clients may send nested arrays)
+            $flatten = function($arr) use (&$flatten) {
+                $out = [];
+                foreach ($arr as $v) {
+                    if (is_array($v)) { $out = array_merge($out, $flatten($v)); }
+                    else { $out[] = $v; }
+                }
+                return $out;
+            };
+            $raw = $request->file('files');
+            $files = is_array($raw) ? $flatten($raw) : [$raw];
+            $seen = [];
+            foreach ($files as $file) {
+                if (! $file) { continue; }
+                // Only process uploaded file instances
+                if (! $file instanceof \Illuminate\Http\UploadedFile) { continue; }
+                $key = $file->getClientOriginalName() . '|' . $file->getSize() . '|' . $file->getClientMimeType();
+                if (isset($seen[$key])) { continue; }
+                $seen[$key] = true;
+
                 $path = $file->store('attachments', 'public');
                 $meta = [
                     'path' => $path,
@@ -124,11 +141,8 @@ class TransactionsController extends Controller
                 ];
                 // keep existing relation write for backward-compat
                 $tx->attachments()->create(array_merge(['business_id' => $bizId], $meta));
-                $json[] = $meta;
                 Log::info('Transaction attachment saved', ['transaction_id' => $tx->id, 'path' => $path]);
             }
-            $tx->attachments_json = $json;
-            $tx->save();
         }
 
         // After creating, redirect to the show view for the newly created transaction
@@ -141,7 +155,6 @@ class TransactionsController extends Controller
         $bizId = (int) ($request->user()->business_id ?? 1);
         $tx = Transaction::where('business_id',$bizId)->where('kind',$kind)->findOrFail($id);
     $attachments = $tx->attachments()->orderBy('id')->get();
-    $attachmentsJson = $tx->attachments_json ?: [];
         $lines = [];
         if ($tx->journal_entry_id) {
             $lines = JournalLine::where('entry_id', $tx->journal_entry_id)->orderBy('id')->get();
@@ -156,14 +169,12 @@ class TransactionsController extends Controller
             return response()->json([
                 'item' => $tx,
                 'attachments' => $attachments,
-                'attachments_json' => $attachmentsJson,
                 'lines' => $lines,
             ]);
         }
         return Inertia::render('Admin/Accounting/'.ucfirst($kind).'/Show', [
             'item' => $tx,
             'attachments' => $attachments,
-            'attachments_json' => $attachmentsJson,
             'lines' => $lines,
         ]);
     }
@@ -234,8 +245,25 @@ class TransactionsController extends Controller
         });
 
         if ($request->hasFile('files')) {
-            $existing = is_array($tx->attachments_json) ? $tx->attachments_json : [];
-            foreach ($request->file('files') as $file) {
+            // handle potential nested arrays and dedupe uploads
+            $flatten = function($arr) use (&$flatten) {
+                $out = [];
+                foreach ($arr as $v) {
+                    if (is_array($v)) { $out = array_merge($out, $flatten($v)); }
+                    else { $out[] = $v; }
+                }
+                return $out;
+            };
+            $raw = $request->file('files');
+            $files = is_array($raw) ? $flatten($raw) : [$raw];
+            $seen = [];
+            foreach ($files as $file) {
+                if (! $file) { continue; }
+                if (! $file instanceof \Illuminate\Http\UploadedFile) { continue; }
+                $key = $file->getClientOriginalName() . '|' . $file->getSize() . '|' . $file->getClientMimeType();
+                if (isset($seen[$key])) { continue; }
+                $seen[$key] = true;
+
                 $path = $file->store('attachments', 'public');
                 $meta = [
                     'path' => $path,
@@ -244,10 +272,7 @@ class TransactionsController extends Controller
                     'name' => $file->getClientOriginalName(),
                 ];
                 $tx->attachments()->create(array_merge(['business_id' => $bizId], $meta));
-                $existing[] = $meta;
             }
-            $tx->attachments_json = $existing;
-            $tx->save();
         }
 
         // After update, redirect back to the show view for this transaction

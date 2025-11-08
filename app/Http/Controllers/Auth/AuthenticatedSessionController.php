@@ -33,7 +33,23 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // After login, redirect to admin landing page by default
+        // After login, redirect user to the highest-priority page they have access to
+        $user = $request->user();
+
+        // Priority: admin -> accountant -> viewer
+        if ($user && method_exists($user, 'hasRole')) {
+            if ($user->hasRole('admin')) {
+                return redirect()->intended(route('admin.home', absolute: false));
+            }
+            if ($user->hasRole('accountant')) {
+                return redirect()->intended(route('admin.accounting.income.index', absolute: false));
+            }
+            if ($user->hasRole('viewer')) {
+                return redirect()->intended(route('admin.accounting.reports.overview', absolute: false));
+            }
+        }
+
+        // Fallback
         return redirect()->intended(route('admin.home', absolute: false));
     }
 

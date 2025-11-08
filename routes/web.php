@@ -22,7 +22,23 @@
     });
 
     Route::get('/dashboard', function () {
-        return Inertia::render('Dashboard');
+        $user = auth()->user();
+        $menus = [];
+        if ($user && method_exists($user, 'hasRole')) {
+            if ($user->hasRole('admin')) {
+                $menus[] = ['label' => 'Admin', 'route' => 'admin.home'];
+            }
+            if ($user->hasRole('accountant')) {
+                $menus[] = ['label' => 'Income/Expense', 'route' => 'admin.accounting.income.index'];
+            }
+            if ($user->hasRole('viewer')) {
+                $menus[] = ['label' => 'Reports', 'route' => 'admin.accounting.reports.overview'];
+            }
+        }
+        // Always include Dashboard link as first item
+        array_unshift($menus, ['label' => 'Dashboard', 'route' => 'dashboard']);
+
+        return Inertia::render('Dashboard', ['menus' => $menus]);
     })->middleware(['auth', 'verified'])->name('dashboard');
 
     // Lightweight debug route to test logging and request flow (no auth)
@@ -30,6 +46,15 @@
         \Illuminate\Support\Facades\Log::info('debug/logtest hit', ['ts' => now()->toDateTimeString()]);
         return response()->json(['ok' => true]);
     });
+
+    // Authenticated debug: return current user's roles (useful to debug 403/role issues)
+    Route::get('/_debug/user-roles', function (\Illuminate\Http\Request $request) {
+        $user = $request->user();
+        if (! $user) { return response()->json(['ok' => false, 'message' => 'not authenticated'], 401); }
+        $roles = [];
+        try { $roles = $user->roles()->pluck('slug')->all(); } catch (\Throwable $e) { $roles = []; }
+        return response()->json(['ok' => true, 'id' => $user->id, 'email' => $user->email, 'roles' => $roles]);
+    })->middleware('auth');
 
     Route::middleware('auth')->group(function () {
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -196,6 +221,10 @@
         Route::middleware([EnsureRole::class . ':admin'])->prefix('users')->name('admin.users.')->group(function () {
             Route::get('/', [AdminUsers::class, 'index'])->name('index');
             Route::patch('/{user}/roles', [AdminUsers::class, 'updateRoles'])->name('roles.update');
-            // Debug JSON endpoint removed
+            // User management CRUD
+            Route::post('/', [AdminUsers::class, 'store'])->name('store');
+            Route::get('/{user}/edit', [AdminUsers::class, 'edit'] ?? [AdminUsers::class, 'index'])->name('edit');
+            Route::put('/{user}', [AdminUsers::class, 'update'])->name('update');
+            Route::delete('/{user}', [AdminUsers::class, 'destroy'])->name('destroy');
         });
 });

@@ -54,6 +54,85 @@ class UsersController extends Controller
     }
 
     /**
+     * Create a new user (admin UI / API)
+     */
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'name' => ['required','string','max:255'],
+            'email' => ['required','email','max:255','unique:users,email'],
+            'password' => ['required','string','min:6'],
+            'roles' => ['array'],
+            'roles.*' => ['string'],
+        ]);
+
+        $user = User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => $data['password'],
+        ]);
+
+        if (! empty($data['roles'])) {
+            $roleIds = Role::whereIn('slug', $data['roles'])->pluck('id')->all();
+            $user->roles()->sync($roleIds);
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true, 'user' => $user]);
+        }
+
+        return back()->with('success', 'User created');
+    }
+
+    /**
+     * Update user attributes (name/email/password)
+     */
+    public function update(Request $request, User $user)
+    {
+        $data = $request->validate([
+            'name' => ['required','string','max:255'],
+            'email' => ['required','email','max:255','unique:users,email,'.$user->id],
+            'password' => ['nullable','string','min:6'],
+            'roles' => ['array'],
+            'roles.*' => ['string'],
+        ]);
+
+        $user->name = $data['name'];
+        $user->email = $data['email'];
+        if (! empty($data['password'])) { $user->password = $data['password']; }
+        $user->save();
+
+        if (isset($data['roles'])) {
+            $roleIds = Role::whereIn('slug', $data['roles'])->pluck('id')->all();
+            $user->roles()->sync($roleIds);
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true, 'user' => $user]);
+        }
+
+        return back()->with('success', 'User updated');
+    }
+
+    /**
+     * Delete a user
+     */
+    public function destroy(Request $request, User $user)
+    {
+        // Prevent self-delete
+        if ($request->user() && $request->user()->id === $user->id) {
+            if ($request->wantsJson()) { return response()->json(['ok'=>false,'message'=>'Cannot delete yourself'], 422); }
+            return back()->with('error', 'ไม่สามารถลบผู้ใช้ของตัวเองได้');
+        }
+
+        $user->roles()->detach();
+        $user->delete();
+
+        if ($request->wantsJson()) { return response()->json(['ok' => true]); }
+        return back()->with('success', 'User deleted');
+    }
+
+    /**
      * Debug endpoint to return users and roles as JSON (bypasses Inertia)
      * Protected by the same admin middleware in routes.
      */
