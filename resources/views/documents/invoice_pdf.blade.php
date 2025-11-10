@@ -120,6 +120,10 @@
         .stack>div {
             margin: 6px 0;
         }
+        .empty-row td {
+            border: none;
+            height: 18px;
+        }
     </style>
 </head>
 
@@ -203,6 +207,15 @@
                     <td class="right">{{ number_format($it->qty_decimal * $it->unit_price_decimal, 2) }}</td>
                 </tr>
             @endforeach
+            @for ($i = is_countable($inv->items) ? count($inv->items) : 0; $i < 4; $i++)
+                <tr >
+                    <td>&nbsp;</td>
+                    <td class="right">&nbsp;</td>
+                    <td class="right">&nbsp;</td>
+                    <td class="right">&nbsp;</td>
+                    <td class="right">&nbsp;</td>
+                </tr>
+            @endfor
         </tbody>
     </table>
     <br />
@@ -212,6 +225,12 @@
             <td class="right" style="width: 15%; border:1px solid #ccc; padding:6px;">
                 {{ number_format($inv->subtotal, 2) }}</td>
         </tr>
+        @if(!empty($inv->discount_type) && $inv->discount_type !== 'none')
+        <tr>
+            <td class="label">Discount @if($inv->discount_type==='percent') ({{ number_format($inv->discount_value_decimal ?? 0,2) }}%) @endif</td>
+            <td class="right" style="border:1px solid #ccc; padding:6px;">-{{ number_format($inv->discount_amount_decimal ?? 0, 2) }}</td>
+        </tr>
+        @endif
         <tr>
             <td class="label">VAT</td>
             <td class="right" style="border:1px solid #ccc; padding:6px;">{{ number_format($inv->vat_decimal, 2) }}
@@ -222,6 +241,16 @@
             <td class="right" style="border:1px solid #ccc; padding:6px; font-weight:700;">
                 {{ number_format($inv->total, 2) }}</td>
         </tr>
+        @if(!empty($inv->deposit_type) && $inv->deposit_type !== 'none')
+        <tr>
+            <td class="label">Deposit @if($inv->deposit_type==='percent') ({{ number_format($inv->deposit_value_decimal ?? 0,2) }}%) @endif</td>
+            <td class="right" style="border:1px solid #ccc; padding:6px;">-{{ number_format($inv->deposit_amount_decimal ?? 0, 2) }}</td>
+        </tr>
+        <tr>
+            <td class="label" style="font-weight:700;">Amount due</td>
+            <td class="right" style="border:1px solid #ccc; padding:6px; font-weight:700;">{{ number_format( (float)($inv->total ?? 0) - (float)($inv->deposit_amount_decimal ?? 0), 2) }}</td>
+        </tr>
+        @endif
     </table>
 </body>
 

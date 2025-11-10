@@ -9,6 +9,7 @@
         <thead class="bg-gray-50">
           <tr>
             <th class="p-2 border">เลขที่</th>
+            <th class="p-2 border">ผู้ขาย</th>
             <th class="p-2 border">วันที่</th>
             <th class="p-2 border text-right">รวมสุทธิ</th>
             <th class="p-2 border">สถานะ</th>
@@ -18,14 +19,18 @@
         <tbody>
           <tr v-for="r in rows.data" :key="r.id">
             <td class="p-2 border">{{ r.number || r.id }}</td>
+            <td class="p-2 border">{{ r.vendor?.name || '-' }}</td>
             <td class="p-2 border">{{ fmtDMY(r.issue_date) }}</td>
             <td class="p-2 border text-right">{{ fmt(r.total) }}</td>
             <td class="p-2 border">{{ r.status || '-' }}</td>
             <td class="p-2 border">
-              <button @click="openView(r.id)" class="px-2 py-0.5 text-xs bg-gray-100 border rounded">ดู</button>
+              <div class="flex gap-2">
+                <button @click="openView(r.id)" class="px-2 py-0.5 text-xs bg-gray-100 border rounded">ดู</button>
+                <button v-if="r.status==='draft'" @click="remove(r.id)" class="px-2 py-0.5 text-xs bg-red-600 text-white rounded">ลบ</button>
+              </div>
             </td>
           </tr>
-          <tr v-if="!rows.data || rows.data.length===0"><td colspan="5" class="p-3 text-center text-gray-500">ไม่มีข้อมูล</td></tr>
+          <tr v-if="!rows.data || rows.data.length===0"><td colspan="6" class="p-3 text-center text-gray-500">ไม่มีข้อมูล</td></tr>
         </tbody>
       </table>
     </div>
@@ -74,7 +79,8 @@
 </template>
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
-import { usePage } from '@inertiajs/vue3'
+import { usePage, router } from '@inertiajs/vue3'
+import { confirmDialog } from '@/utils/swal'
 import { computed, ref } from 'vue'
 import { fmtDMY } from '@/utils/format'
 import Modal from '@/Components/Modal.vue'
@@ -97,4 +103,5 @@ async function openView(id){
     loading.value = false
   }
 }
+async function remove(id){ if(await confirmDialog('ลบเอกสารนี้?')) router.delete(`/admin/documents/po/${id}`) }
 </script>

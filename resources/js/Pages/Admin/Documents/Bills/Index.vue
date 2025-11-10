@@ -9,6 +9,7 @@
         <thead class="bg-gray-50">
           <tr>
             <th class="p-2 border">เลขที่</th>
+            <th class="p-2 border">ผู้ขาย</th>
             <th class="p-2 border">วันที่</th>
             <th class="p-2 border text-right">รวมสุทธิ</th>
             <th class="p-2 border">สถานะ</th>
@@ -18,6 +19,7 @@
         <tbody>
           <tr v-for="r in rows.data" :key="r.id">
             <td class="p-2 border">{{ r.number || r.id }}</td>
+            <td class="p-2 border">{{ r.vendor?.name || '-' }}</td>
             <td class="p-2 border">{{ fmtDMY(r.bill_date) }}</td>
             <td class="p-2 border text-right">{{ fmt(r.total) }}</td>
             <td class="p-2 border">{{ r.status || '-' }}</td>
@@ -25,10 +27,11 @@
               <div class="flex gap-2">
                 <button @click="openView(r.id)" class="px-2 py-0.5 text-xs bg-gray-100 border rounded">ดู</button>
                 <button v-if="r.status!=='paid'" @click="pay(r.id)" class="px-2 py-0.5 text-xs bg-green-700 text-white rounded">จ่าย</button>
+                <button v-if="r.status==='draft'" @click="remove(r.id)" class="px-2 py-0.5 text-xs bg-red-600 text-white rounded">ลบ</button>
               </div>
             </td>
           </tr>
-          <tr v-if="!rows.data || rows.data.length===0"><td colspan="5" class="p-3 text-center text-gray-500">ไม่มีข้อมูล</td></tr>
+          <tr v-if="!rows.data || rows.data.length===0"><td colspan="6" class="p-3 text-center text-gray-500">ไม่มีข้อมูล</td></tr>
         </tbody>
       </table>
     </div>
@@ -89,6 +92,7 @@ function fmt(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDi
 async function pay(id){ if(await confirmDialog('จ่ายบิลนี้?')) router.post(`/admin/documents/bills/${id}/pay`, { date: new Date().toISOString().slice(0,10) }) }
 
 // modal state
+async function remove(id){ if(await confirmDialog('ลบเอกสารนี้?')) router.delete(`/admin/documents/bills/${id}`) }
 const showModal = ref(false)
 const loading = ref(false)
 const item = ref(null)

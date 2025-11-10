@@ -14,6 +14,8 @@ body { font-family: DejaVu Sans, sans-serif; font-size: 13px; line-height: 1.85;
 .small { color: #444; }
 .right { text-align: right; }
 .stack > div { margin-bottom: 4px; }
+/* empty-row helper for other PDFs (kept for consistency) */
+.empty-row td { border: none; height: 18px; }
 </style>
 </head>
 <body>

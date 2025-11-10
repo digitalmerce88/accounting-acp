@@ -119,6 +119,10 @@
     .stack>div {
       margin: 6px 0;
     }
+    .empty-row td {
+      border: none;
+      height: 18px;
+    }
   </style>
 </head>
 
@@ -203,6 +207,15 @@
           <td class="right">{{ number_format($it->qty_decimal * $it->unit_price_decimal, 2) }}</td>
         </tr>
       @endforeach
+      @for ($i = is_countable($quote->items) ? count($quote->items) : 0; $i < 4; $i++)
+        <tr >
+          <td>&nbsp;</td>
+          <td class="right">&nbsp;</td>
+          <td class="right">&nbsp;</td>
+          <td class="right">&nbsp;</td>
+          <td class="right">&nbsp;</td>
+        </tr>
+      @endfor
     </tbody>
   </table>
   <br />
@@ -211,6 +224,12 @@
       <td class="label" style="width:85%;">Subtotal</td>
       <td class="right" style="width: 15%; border:1px solid #ccc; padding:6px;">{{ number_format($quote->subtotal ?? 0, 2) }}</td>
     </tr>
+    @if(!empty($quote->discount_type) && $quote->discount_type !== 'none')
+    <tr>
+      <td class="label">Discount @if($quote->discount_type==='percent') ({{ number_format($quote->discount_value_decimal ?? 0,2) }}%) @endif</td>
+      <td class="right" style="border:1px solid #ccc; padding:6px;">-{{ number_format($quote->discount_amount_decimal ?? 0, 2) }}</td>
+    </tr>
+    @endif
     <tr>
       <td class="label">VAT</td>
       <td class="right" style="border:1px solid #ccc; padding:6px;">{{ number_format($quote->vat_decimal ?? 0, 2) }}</td>
@@ -219,6 +238,16 @@
       <td class="label" style="font-weight:700;">Total</td>
       <td class="right" style="border:1px solid #ccc; padding:6px; font-weight:700;">{{ number_format($quote->total ?? 0, 2) }}</td>
     </tr>
+    @if(!empty($quote->deposit_type) && $quote->deposit_type !== 'none')
+    <tr>
+      <td class="label">Deposit @if($quote->deposit_type==='percent') ({{ number_format($quote->deposit_value_decimal ?? 0,2) }}%) @endif</td>
+      <td class="right" style="border:1px solid #ccc; padding:6px;">-{{ number_format($quote->deposit_amount_decimal ?? 0, 2) }}</td>
+    </tr>
+    <tr>
+      <td class="label" style="font-weight:700;">Amount due</td>
+      <td class="right" style="border:1px solid #ccc; padding:6px; font-weight:700;">{{ number_format( (float)($quote->total ?? 0) - (float)($quote->deposit_amount_decimal ?? 0), 2) }}</td>
+    </tr>
+    @endif
   </table>
 
   @if(!empty($quote->note))

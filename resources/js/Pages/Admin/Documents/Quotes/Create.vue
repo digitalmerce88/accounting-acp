@@ -84,8 +84,30 @@
 
       <div class="flex flex-col items-end gap-1">
         <div>Subtotal: <span class="font-medium">{{ fmt(subtotal) }}</span></div>
+        <div class="flex items-center gap-2">
+          <label class="text-sm">ส่วนลด</label>
+          <select v-model="form.discount_type" class="border rounded p-1 text-sm">
+            <option value="none">ไม่มี</option>
+            <option value="amount">จำนวนเงิน</option>
+            <option value="percent">เปอร์เซนต์</option>
+          </select>
+          <input v-model.number="form.discount_value_decimal" type="number" step="0.01" min="0" class="w-32 border rounded p-1 text-sm text-right" />
+        </div>
+        <div>Discount: <span class="font-medium">{{ fmt(discount_amount) }}</span></div>
+        <div>Subtotal after discount: <span class="font-medium">{{ fmt(adjusted_subtotal) }}</span></div>
         <div>VAT: <span class="font-medium">{{ fmt(vat) }}</span></div>
+        <div class="flex items-center gap-2">
+          <label class="text-sm">มัดจำ</label>
+          <select v-model="form.deposit_type" class="border rounded p-1 text-sm">
+            <option value="none">ไม่มี</option>
+            <option value="amount">จำนวนเงิน</option>
+            <option value="percent">เปอร์เซนต์</option>
+          </select>
+          <input v-model.number="form.deposit_value_decimal" type="number" step="0.01" min="0" class="w-32 border rounded p-1 text-sm text-right" />
+        </div>
+        <div>Deposit: <span class="font-medium">{{ fmt(deposit_amount) }}</span></div>
         <div>Total: <span class="font-semibold">{{ fmt(total) }}</span></div>
+        <div>Amount due: <span class="font-semibold">{{ fmt(amount_due) }}</span></div>
       </div>
 
       <div class="flex gap-2">
@@ -108,13 +130,37 @@ const form = reactive({
   subject: '',
   customer: { name: '', tax_id: '', phone: '', address: '' },
   items: [ { name: '', qty_decimal: 1, unit_price_decimal: 0, vat_rate_decimal: 0 } ],
+  discount_type: 'none',
+  discount_value_decimal: 0,
+  deposit_type: 'none',
+  deposit_value_decimal: 0,
 })
 const customerQuery = ref('')
 const processing = ref(false)
 
 const subtotal = computed(()=> form.items.reduce((s,it)=> s + (Number(it.qty_decimal||0)*Number(it.unit_price_decimal||0)), 0))
-const vat = computed(()=> form.items.reduce((s,it)=> s + (Number(it.qty_decimal||0)*Number(it.unit_price_decimal||0)) * (Number(it.vat_rate_decimal||0)/100), 0))
-const total = computed(()=> subtotal.value + vat.value)
+const discount_amount = computed(()=>{
+  const t = form.discount_type || 'none'
+  const v = Number(form.discount_value_decimal||0)
+  if(t==='percent') return subtotal.value * (Math.min(Math.max(v,0),100)/100)
+  if(t==='amount') return Math.min(Math.max(v,0), subtotal.value)
+  return 0
+})
+const adjusted_subtotal = computed(()=> subtotal.value - discount_amount.value)
+const vat = computed(()=> {
+  if(subtotal.value <= 0) return 0
+  const raw = form.items.reduce((s,it)=> s + (Number(it.qty_decimal||0)*Number(it.unit_price_decimal||0)) * (Number(it.vat_rate_decimal||0)/100), 0)
+  return raw * (adjusted_subtotal.value / (subtotal.value || 1))
+})
+const total = computed(()=> adjusted_subtotal.value + vat.value)
+const deposit_amount = computed(()=>{
+  const t = form.deposit_type || 'none'
+  const v = Number(form.deposit_value_decimal||0)
+  if(t==='percent') return total.value * (Math.min(Math.max(v,0),100)/100)
+  if(t==='amount') return Math.min(Math.max(v,0), total.value)
+  return 0
+})
+const amount_due = computed(()=> total.value - deposit_amount.value)
 
 function addItem(){ form.items.push({ name: '', qty_decimal: 1, unit_price_decimal: 0, vat_rate_decimal: 0 }) }
 function removeItem(i){ form.items.splice(i,1) }

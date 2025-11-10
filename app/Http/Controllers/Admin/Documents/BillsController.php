@@ -15,7 +15,7 @@ class BillsController extends Controller
     public function index(Request $request)
     {
         $bizId = (int) ($request->user()->business_id ?? 1);
-        $rows  = Bill::where('business_id', $bizId)->latest('bill_date')->paginate(12);
+    $rows  = Bill::where('business_id', $bizId)->with(['vendor'])->latest('bill_date')->paginate(12);
         return Inertia::render('Admin/Documents/Bills/Index', ['rows' => $rows]);
     }
 
@@ -47,6 +47,10 @@ class BillsController extends Controller
             'items.*.qty_decimal'        => ['required', 'numeric', 'min:0'],
             'items.*.unit_price_decimal' => ['required', 'numeric', 'min:0'],
             'items.*.vat_rate_decimal'   => ['nullable', 'numeric', 'min:0'],
+            'discount_type' => ['nullable','in:none,amount,percent'],
+            'discount_value_decimal' => ['nullable','numeric','min:0'],
+            'deposit_type' => ['nullable','in:none,amount,percent'],
+            'deposit_value_decimal' => ['nullable','numeric','min:0'],
         ]);
 
         $items = $data['items'];
@@ -54,18 +58,44 @@ class BillsController extends Controller
 
         $subtotal = 0.0;
         $vat      = 0.0;
+        $raw_vat = 0.0; $lines = [];
         foreach ($items as $it) {
             $line = (float) $it['qty_decimal'] * (float) $it['unit_price_decimal'];
+            $lines[] = $line;
             $subtotal += $line;
-            $vat += $line * ((float) ($it['vat_rate_decimal'] ?? 0) / 100.0);
+            $raw_vat += $line * ((float) ($it['vat_rate_decimal'] ?? 0) / 100.0);
         }
+
+        // discount
+        $discount_type = $data['discount_type'] ?? 'none';
+        $discount_value = (float)($data['discount_value_decimal'] ?? 0);
+        if ($discount_type === 'percent') { $discount_value = min(max($discount_value,0),100); $discount_amount = $subtotal * ($discount_value/100.0); }
+        elseif ($discount_type === 'amount') { $discount_amount = min(max($discount_value,0), $subtotal); }
+        else { $discount_amount = 0.0; $discount_value = 0.0; }
+
+        $adjusted_subtotal = $subtotal - $discount_amount;
+        $vat = $subtotal > 0 ? $raw_vat * ($adjusted_subtotal / $subtotal) : 0.0;
+        $total = $adjusted_subtotal + $vat;
+
+        // deposit
+        $deposit_type = $data['deposit_type'] ?? 'none';
+        $deposit_value = (float)($data['deposit_value_decimal'] ?? 0);
+        if ($deposit_type === 'percent') { $deposit_value = min(max($deposit_value,0),100); $deposit_amount = $total * ($deposit_value/100.0); }
+        elseif ($deposit_type === 'amount') { $deposit_amount = min(max($deposit_value,0), $total); }
+        else { $deposit_amount = 0.0; $deposit_value = 0.0; }
 
         $bill = new Bill();
         $bill->fill(array_merge($data, [
             'business_id' => $bizId,
             'subtotal'    => round($subtotal, 2),
+            'discount_amount_decimal' => round($discount_amount,2),
+            'discount_value_decimal' => round($discount_value,2),
+            'discount_type' => $discount_type,
             'vat_decimal' => round($vat, 2),
-            'total'       => round($subtotal + $vat, 2),
+            'total'       => round($total, 2),
+            'deposit_amount_decimal' => round($deposit_amount,2),
+            'deposit_value_decimal' => round($deposit_value,2),
+            'deposit_type' => $deposit_type,
             'status'      => 'draft',
         ]));
         // resolve or create vendor
@@ -157,22 +187,48 @@ class BillsController extends Controller
             'items.*.qty_decimal'        => ['required', 'numeric', 'min:0'],
             'items.*.unit_price_decimal' => ['required', 'numeric', 'min:0'],
             'items.*.vat_rate_decimal'   => ['nullable', 'numeric', 'min:0'],
+            'discount_type' => ['nullable','in:none,amount,percent'],
+            'discount_value_decimal' => ['nullable','numeric','min:0'],
+            'deposit_type' => ['nullable','in:none,amount,percent'],
+            'deposit_value_decimal' => ['nullable','numeric','min:0'],
         ]);
         $items = $data['items'];
         unset($data['items']);
 
-        $subtotal = 0.0;
-        $vat      = 0.0;
+        $subtotal = 0.0; $raw_vat=0.0; $lines=[];
         foreach ($items as $it) {
             $line = (float) $it['qty_decimal'] * (float) $it['unit_price_decimal'];
+            $lines[] = $line;
             $subtotal += $line;
-            $vat += $line * ((float) ($it['vat_rate_decimal'] ?? 0) / 100.0);
+            $raw_vat += $line * ((float) ($it['vat_rate_decimal'] ?? 0) / 100.0);
         }
+
+        $discount_type = $data['discount_type'] ?? 'none';
+        $discount_value = (float)($data['discount_value_decimal'] ?? 0);
+        if ($discount_type === 'percent') { $discount_value = min(max($discount_value,0),100); $discount_amount = $subtotal * ($discount_value/100.0); }
+        elseif ($discount_type === 'amount') { $discount_amount = min(max($discount_value,0), $subtotal); }
+        else { $discount_amount = 0.0; $discount_value = 0.0; }
+
+        $adjusted_subtotal = $subtotal - $discount_amount;
+        $vat = $subtotal > 0 ? $raw_vat * ($adjusted_subtotal / $subtotal) : 0.0;
+        $total = $adjusted_subtotal + $vat;
+
+        $deposit_type = $data['deposit_type'] ?? 'none';
+        $deposit_value = (float)($data['deposit_value_decimal'] ?? 0);
+        if ($deposit_type === 'percent') { $deposit_value = min(max($deposit_value,0),100); $deposit_amount = $total * ($deposit_value/100.0); }
+        elseif ($deposit_type === 'amount') { $deposit_amount = min(max($deposit_value,0), $total); }
+        else { $deposit_amount = 0.0; $deposit_value = 0.0; }
 
         $bill->fill(array_merge($data, [
             'subtotal'    => round($subtotal, 2),
+            'discount_amount_decimal' => round($discount_amount,2),
+            'discount_value_decimal' => round($discount_value,2),
+            'discount_type' => $discount_type,
             'vat_decimal' => round($vat, 2),
-            'total'       => round($subtotal + $vat, 2),
+            'total'       => round($total, 2),
+            'deposit_amount_decimal' => round($deposit_amount,2),
+            'deposit_value_decimal' => round($deposit_value,2),
+            'deposit_type' => $deposit_type,
         ]));
         $bill->save();
 
