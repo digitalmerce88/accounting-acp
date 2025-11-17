@@ -11,6 +11,7 @@ use App\Domain\Documents\SalesService;
 use App\Domain\Documents\Numbering;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Domain\Documents\DocumentCalculator;
+use App\Domain\Documents\ApprovalService;
 
 class InvoicesController extends Controller
 {
@@ -140,7 +141,7 @@ class InvoicesController extends Controller
     {
         $bizId = (int) ($request->user()->business_id ?? 1);
         $item = Invoice::where('business_id',$bizId)->with(['items','customer'])->findOrFail($id);
-        if (in_array($item->status, ['paid','void'])) {
+        if (in_array($item->status, ['paid','void']) || in_array($item->approval_status, ['approved','locked'])) {
             return redirect()->back()->with('error','ไม่สามารถแก้ไขเอกสารที่ชำระแล้ว/ยกเลิกแล้ว');
         }
         return Inertia::render('Admin/Documents/Invoices/Edit', ['item'=>$item]);
@@ -150,7 +151,7 @@ class InvoicesController extends Controller
     {
         $bizId = (int) ($request->user()->business_id ?? 1);
         $inv = Invoice::where('business_id',$bizId)->with(['items','customer'])->findOrFail($id);
-        if (in_array($inv->status, ['paid','void'])) {
+        if (in_array($inv->status, ['paid','void']) || in_array($inv->approval_status, ['approved','locked'])) {
             return redirect()->back()->with('error','ไม่สามารถแก้ไขเอกสารที่ชำระแล้ว/ยกเลิกแล้ว');
         }
 
@@ -352,5 +353,55 @@ class InvoicesController extends Controller
         $pdf = Pdf::setOptions(['isHtml5ParserEnabled'=>true,'isRemoteEnabled'=>true])->loadView('documents.receipt_pdf', [ 'inv' => $item, 'company' => $companyArr, 'paid_date'=>$paidDate, 'payment_method'=>$paymentMethod ]);
         if ($request->boolean('dl') || $request->boolean('download')) { return $pdf->download($filename); }
         return $pdf->stream($filename, ['Attachment' => false]);
+    }
+
+    public function submit(Request $request, int $id)
+    {
+        $bizId = (int) ($request->user()->business_id ?? 1);
+        $inv = Invoice::where('business_id',$bizId)->findOrFail($id);
+        if ($inv->approval_status !== 'draft') {
+            return back()->with('error','สถานะไม่ถูกต้องสำหรับการส่งอนุมัติ');
+        }
+        $comment = (string)($request->get('comment') ?? null);
+        ApprovalService::submit($inv, $bizId, (int)$request->user()->id, $comment);
+        return back()->with('success','ส่งอนุมัติแล้ว');
+    }
+
+    public function approve(Request $request, int $id)
+    {
+        $user = $request->user();
+        if (!method_exists($user, 'hasRole') || !$user->hasRole('admin')) {
+            abort(403, 'ต้องเป็นผู้ดูแลระบบจึงจะอนุมัติได้');
+        }
+        $bizId = (int) ($user->business_id ?? 1);
+        $inv = Invoice::where('business_id',$bizId)->findOrFail($id);
+        if ($inv->approval_status !== 'submitted') {
+            return back()->with('error','สถานะไม่ถูกต้องสำหรับการอนุมัติ');
+        }
+        $comment = (string)($request->get('comment') ?? null);
+        ApprovalService::approve($inv, $bizId, (int)$user->id, $comment);
+        return back()->with('success','อนุมัติแล้ว');
+    }
+
+    public function lock(Request $request, int $id)
+    {
+        $user = $request->user();
+        if (!method_exists($user, 'hasRole') || !$user->hasRole('admin')) { abort(403); }
+        $bizId = (int) ($user->business_id ?? 1);
+        $inv = Invoice::where('business_id',$bizId)->findOrFail($id);
+        if ($inv->approval_status !== 'approved') { return back()->with('error','ล็อกได้เฉพาะเอกสารที่อนุมัติแล้ว'); }
+        ApprovalService::lock($inv, $bizId, (int)$user->id, (string)($request->get('comment') ?? null));
+        return back()->with('success','ล็อกเอกสารแล้ว');
+    }
+
+    public function unlock(Request $request, int $id)
+    {
+        $user = $request->user();
+        if (!method_exists($user, 'hasRole') || !$user->hasRole('admin')) { abort(403); }
+        $bizId = (int) ($user->business_id ?? 1);
+        $inv = Invoice::where('business_id',$bizId)->findOrFail($id);
+        if ($inv->approval_status !== 'locked') { return back()->with('error','ปลดล็อกได้เฉพาะเอกสารที่ถูกล็อก'); }
+        ApprovalService::unlock($inv, $bizId, (int)$user->id, (string)($request->get('comment') ?? null));
+        return back()->with('success','ปลดล็อกเอกสารแล้ว');
     }
 }

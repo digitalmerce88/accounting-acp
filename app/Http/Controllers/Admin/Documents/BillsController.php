@@ -8,6 +8,7 @@ use App\Models\BillItem;
 use App\Domain\Documents\Numbering;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Domain\Documents\DocumentCalculator;
+use App\Domain\Documents\ApprovalService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -135,7 +136,7 @@ class BillsController extends Controller
     {
         $bizId = (int) ($request->user()->business_id ?? 1);
         $item  = Bill::where('business_id', $bizId)->with(['items', 'vendor'])->findOrFail($id);
-        if (in_array($item->status, ['paid', 'void'])) {
+        if (in_array($item->status, ['paid', 'void']) || in_array($item->approval_status, ['approved','locked'])) {
             return redirect()->back()->with('error', 'ไม่สามารถแก้ไขเอกสารที่จ่ายแล้ว/ยกเลิกแล้ว');
         }
         return Inertia::render('Admin/Documents/Bills/Edit', ['item' => $item]);
@@ -145,7 +146,7 @@ class BillsController extends Controller
     {
         $bizId = (int) ($request->user()->business_id ?? 1);
         $bill  = Bill::where('business_id', $bizId)->with(['items', 'vendor'])->findOrFail($id);
-        if (in_array($bill->status, ['paid', 'void'])) {
+        if (in_array($bill->status, ['paid', 'void']) || in_array($bill->approval_status, ['approved','locked'])) {
             return redirect()->back()->with('error', 'ไม่สามารถแก้ไขเอกสารที่จ่ายแล้ว/ยกเลิกแล้ว');
         }
 
@@ -311,6 +312,48 @@ class BillsController extends Controller
             return $pdf->download($filename);
         }
         return $pdf->stream($filename, ['Attachment' => false]);
+    }
+
+    public function submit(Request $request, int $id)
+    {
+        $bizId = (int) ($request->user()->business_id ?? 1);
+        $bill = Bill::where('business_id',$bizId)->findOrFail($id);
+        if ($bill->approval_status !== 'draft') {
+            return back()->with('error','สถานะไม่ถูกต้องสำหรับการส่งอนุมัติ');
+        }
+        ApprovalService::submit($bill, $bizId, (int)$request->user()->id, (string)($request->get('comment') ?? null));
+        return back()->with('success','ส่งอนุมัติแล้ว');
+    }
+
+    public function approve(Request $request, int $id)
+    {
+        $user = $request->user();
+        if (!method_exists($user, 'hasRole') || !$user->hasRole('admin')) { abort(403); }
+        $bizId = (int) ($user->business_id ?? 1);
+        $bill = Bill::where('business_id',$bizId)->findOrFail($id);
+        if ($bill->approval_status !== 'submitted') { return back()->with('error','สถานะไม่ถูกต้องสำหรับการอนุมัติ'); }
+        ApprovalService::approve($bill, $bizId, (int)$user->id, (string)($request->get('comment') ?? null));
+        return back()->with('success','อนุมัติแล้ว');
+    }
+
+    public function lock(Request $request, int $id)
+    {
+        $user = $request->user(); if (!method_exists($user,'hasRole') || !$user->hasRole('admin')) { abort(403); }
+        $bizId = (int) ($user->business_id ?? 1);
+        $bill = Bill::where('business_id',$bizId)->findOrFail($id);
+        if ($bill->approval_status !== 'approved') { return back()->with('error','ล็อกได้เฉพาะเอกสารที่อนุมัติแล้ว'); }
+        ApprovalService::lock($bill, $bizId, (int)$user->id, (string)($request->get('comment') ?? null));
+        return back()->with('success','ล็อกเอกสารแล้ว');
+    }
+
+    public function unlock(Request $request, int $id)
+    {
+        $user = $request->user(); if (!method_exists($user,'hasRole') || !$user->hasRole('admin')) { abort(403); }
+        $bizId = (int) ($user->business_id ?? 1);
+        $bill = Bill::where('business_id',$bizId)->findOrFail($id);
+        if ($bill->approval_status !== 'locked') { return back()->with('error','ปลดล็อกได้เฉพาะเอกสารที่ถูกล็อก'); }
+        ApprovalService::unlock($bill, $bizId, (int)$user->id, (string)($request->get('comment') ?? null));
+        return back()->with('success','ปลดล็อกเอกสารแล้ว');
     }
 
     public function whtPdf(Request $request, int $id)

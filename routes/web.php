@@ -186,6 +186,11 @@
             Route::put('/invoices/{id}', [$inv,'update'])->name('invoices.update');
             Route::delete('/invoices/{id}', [$inv,'destroy'])->name('invoices.destroy');
             Route::post('/invoices/{id}/pay', [$inv,'pay'])->name('invoices.pay');
+            // Approval workflow
+            Route::post('/invoices/{id}/submit', [$inv,'submit'])->name('invoices.submit');
+            Route::post('/invoices/{id}/approve', [$inv,'approve'])->name('invoices.approve');
+            Route::post('/invoices/{id}/lock', [$inv,'lock'])->name('invoices.lock');
+            Route::post('/invoices/{id}/unlock', [$inv,'unlock'])->name('invoices.unlock');
 
             // customers quick search
             Route::get('/customers/search', [$cus,'search'])->name('customers.search');
@@ -201,6 +206,11 @@
             Route::put('/bills/{id}', [$bill,'update'])->name('bills.update');
             Route::delete('/bills/{id}', [$bill,'destroy'])->name('bills.destroy');
             Route::post('/bills/{id}/pay', [$bill,'pay'])->name('bills.pay');
+            // Approval workflow
+            Route::post('/bills/{id}/submit', [$bill,'submit'])->name('bills.submit');
+            Route::post('/bills/{id}/approve', [$bill,'approve'])->name('bills.approve');
+            Route::post('/bills/{id}/lock', [$bill,'lock'])->name('bills.lock');
+            Route::post('/bills/{id}/unlock', [$bill,'unlock'])->name('bills.unlock');
 
             // vendors quick search
             Route::get('/vendors/search', [$ven,'search'])->name('vendors.search');
@@ -213,6 +223,11 @@
             Route::get('/quotes/{id}', [$quo,'show'])->name('quotes.show');
             // Quote & PO PDFs
             Route::get('/quotes/{id}/pdf', [$quo,'pdf'])->name('quotes.pdf');
+            // Approval workflow
+            Route::post('/quotes/{id}/submit', [$quo,'submit'])->name('quotes.submit');
+            Route::post('/quotes/{id}/approve', [$quo,'approve'])->name('quotes.approve');
+            Route::post('/quotes/{id}/lock', [$quo,'lock'])->name('quotes.lock');
+            Route::post('/quotes/{id}/unlock', [$quo,'unlock'])->name('quotes.unlock');
 
             // Purchase Orders CRUD
             Route::get('/po', [$po,'index'])->name('po.index');
@@ -220,6 +235,11 @@
             Route::post('/po', [$po,'store'])->name('po.store');
             Route::get('/po/{id}', [$po,'show'])->name('po.show');
             Route::get('/po/{id}/pdf', [$po,'pdf'])->name('po.pdf');
+            // Approval workflow
+            Route::post('/po/{id}/submit', [$po,'submit'])->name('po.submit');
+            Route::post('/po/{id}/approve', [$po,'approve'])->name('po.approve');
+            Route::post('/po/{id}/lock', [$po,'lock'])->name('po.lock');
+            Route::post('/po/{id}/unlock', [$po,'unlock'])->name('po.unlock');
         });
 
         // Admin Users management (admin only)

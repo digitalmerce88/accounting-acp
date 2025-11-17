@@ -9,6 +9,7 @@ use Inertia\Inertia;
 use App\Domain\Documents\Numbering;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Domain\Documents\DocumentCalculator;
+use App\Domain\Documents\ApprovalService;
 
 class QuotesController extends Controller
 {
@@ -138,5 +139,44 @@ class QuotesController extends Controller
         $pdf = Pdf::setOptions(['isHtml5ParserEnabled'=>true,'isRemoteEnabled'=>true])->loadView('documents.quote_pdf', [ 'quote' => $item, 'company' => $companyArr ]);
         if ($request->boolean('dl') || $request->boolean('download')) { return $pdf->download($filename); }
         return $pdf->stream($filename, ['Attachment' => false]);
+    }
+
+    public function submit(Request $request, int $id)
+    {
+        $bizId = (int) ($request->user()->business_id ?? 1);
+        $q = Quote::where('business_id',$bizId)->findOrFail($id);
+        if ($q->approval_status !== 'draft') { return back()->with('error','สถานะไม่ถูกต้องสำหรับการส่งอนุมัติ'); }
+        ApprovalService::submit($q, $bizId, (int)$request->user()->id, (string)($request->get('comment') ?? null));
+        return back()->with('success','ส่งอนุมัติแล้ว');
+    }
+
+    public function approve(Request $request, int $id)
+    {
+        $user = $request->user(); if (!method_exists($user,'hasRole') || !$user->hasRole('admin')) { abort(403); }
+        $bizId = (int) ($user->business_id ?? 1);
+        $q = Quote::where('business_id',$bizId)->findOrFail($id);
+        if ($q->approval_status !== 'submitted') { return back()->with('error','สถานะไม่ถูกต้องสำหรับการอนุมัติ'); }
+        ApprovalService::approve($q, $bizId, (int)$user->id, (string)($request->get('comment') ?? null));
+        return back()->with('success','อนุมัติแล้ว');
+    }
+
+    public function lock(Request $request, int $id)
+    {
+        $user = $request->user(); if (!method_exists($user,'hasRole') || !$user->hasRole('admin')) { abort(403); }
+        $bizId = (int) ($user->business_id ?? 1);
+        $q = Quote::where('business_id',$bizId)->findOrFail($id);
+        if ($q->approval_status !== 'approved') { return back()->with('error','ล็อกได้เฉพาะเอกสารที่อนุมัติแล้ว'); }
+        ApprovalService::lock($q, $bizId, (int)$user->id, (string)($request->get('comment') ?? null));
+        return back()->with('success','ล็อกเอกสารแล้ว');
+    }
+
+    public function unlock(Request $request, int $id)
+    {
+        $user = $request->user(); if (!method_exists($user,'hasRole') || !$user->hasRole('admin')) { abort(403); }
+        $bizId = (int) ($user->business_id ?? 1);
+        $q = Quote::where('business_id',$bizId)->findOrFail($id);
+        if ($q->approval_status !== 'locked') { return back()->with('error','ปลดล็อกได้เฉพาะเอกสารที่ถูกล็อก'); }
+        ApprovalService::unlock($q, $bizId, (int)$user->id, (string)($request->get('comment') ?? null));
+        return back()->with('success','ปลดล็อกเอกสารแล้ว');
     }
 }
