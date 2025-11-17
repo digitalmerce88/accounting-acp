@@ -10,6 +10,7 @@ use App\Models\InvoiceItem;
 use App\Domain\Documents\SalesService;
 use App\Domain\Documents\Numbering;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Domain\Documents\DocumentCalculator;
 
 class InvoicesController extends Controller
 {
@@ -59,59 +60,27 @@ class InvoicesController extends Controller
         // normalize booleans
         $data['is_tax_invoice'] = (bool)($data['is_tax_invoice'] ?? false);
 
-        // compute totals
-        $subtotal = 0.0; $raw_vat = 0.0; $lines = [];
-        foreach ($items as $it) {
-            $line = (float)$it['qty_decimal'] * (float)$it['unit_price_decimal'];
-            $lines[] = $line;
-            $subtotal += $line;
-            $raw_vat += $line * ((float)($it['vat_rate_decimal'] ?? 0) / 100.0);
-        }
-
-        // apply discount
-        $discount_type = $data['discount_type'] ?? 'none';
-        $discount_value = (float)($data['discount_value_decimal'] ?? 0);
-        if ($discount_type === 'percent') {
-            $discount_value = min(max($discount_value, 0), 100);
-            $discount_amount = $subtotal * ($discount_value / 100.0);
-        } elseif ($discount_type === 'amount') {
-            $discount_amount = min(max($discount_value, 0), $subtotal);
-        } else {
-            $discount_amount = 0.0;
-            $discount_value = 0.0;
-        }
-
-        $adjusted_subtotal = $subtotal - $discount_amount;
-        // reduce vat proportionally when discount reduces taxable base
-        $vat = $subtotal > 0 ? $raw_vat * ($adjusted_subtotal / $subtotal) : 0.0;
-
-        $total = $adjusted_subtotal + $vat;
-
-        // deposit
-        $deposit_type = $data['deposit_type'] ?? 'none';
-        $deposit_value = (float)($data['deposit_value_decimal'] ?? 0);
-        if ($deposit_type === 'percent') {
-            $deposit_value = min(max($deposit_value, 0), 100);
-            $deposit_amount = $total * ($deposit_value / 100.0);
-        } elseif ($deposit_type === 'amount') {
-            $deposit_amount = min(max($deposit_value, 0), $total);
-        } else {
-            $deposit_amount = 0.0;
-            $deposit_value = 0.0;
-        }
+        // compute totals via service
+        $calc = DocumentCalculator::compute(
+            $items,
+            $data['discount_type'] ?? 'none',
+            (float)($data['discount_value_decimal'] ?? 0),
+            $data['deposit_type'] ?? 'none',
+            (float)($data['deposit_value_decimal'] ?? 0)
+        );
 
         $inv = new Invoice();
         $inv->fill(array_merge($data, [
             'business_id' => $bizId,
-            'subtotal' => round($subtotal, 2),
-            'discount_amount_decimal' => round($discount_amount,2),
-            'discount_value_decimal' => round($discount_value,2),
-            'discount_type' => $discount_type,
-            'vat_decimal' => round($vat, 2),
-            'total' => round($total, 2),
-            'deposit_amount_decimal' => round($deposit_amount,2),
-            'deposit_value_decimal' => round($deposit_value,2),
-            'deposit_type' => $deposit_type,
+            'subtotal' => $calc['subtotal'],
+            'discount_amount_decimal' => $calc['discount_amount_decimal'],
+            'discount_value_decimal' => $calc['discount_value_decimal'],
+            'discount_type' => $calc['discount_type'],
+            'vat_decimal' => $calc['vat_decimal'],
+            'total' => $calc['total'],
+            'deposit_amount_decimal' => $calc['deposit_amount_decimal'],
+            'deposit_value_decimal' => $calc['deposit_value_decimal'],
+            'deposit_type' => $calc['deposit_type'],
             'status' => 'draft',
         ]));
         // resolve or create customer
@@ -212,55 +181,25 @@ class InvoicesController extends Controller
         unset($data['items']);
         $data['is_tax_invoice'] = (bool)($data['is_tax_invoice'] ?? false);
 
-        // compute totals
-        $subtotal = 0.0; $raw_vat = 0.0; $lines = [];
-        foreach ($items as $it) {
-            $line = (float)$it['qty_decimal'] * (float)$it['unit_price_decimal'];
-            $lines[] = $line;
-            $subtotal += $line;
-            $raw_vat += $line * ((float)($it['vat_rate_decimal'] ?? 0) / 100.0);
-        }
-
-        // apply discount
-        $discount_type = $data['discount_type'] ?? 'none';
-        $discount_value = (float)($data['discount_value_decimal'] ?? 0);
-        if ($discount_type === 'percent') {
-            $discount_value = min(max($discount_value, 0), 100);
-            $discount_amount = $subtotal * ($discount_value / 100.0);
-        } elseif ($discount_type === 'amount') {
-            $discount_amount = min(max($discount_value, 0), $subtotal);
-        } else {
-            $discount_amount = 0.0;
-            $discount_value = 0.0;
-        }
-
-        $adjusted_subtotal = $subtotal - $discount_amount;
-        $vat = $subtotal > 0 ? $raw_vat * ($adjusted_subtotal / $subtotal) : 0.0;
-        $total = $adjusted_subtotal + $vat;
-
-        // deposit
-        $deposit_type = $data['deposit_type'] ?? 'none';
-        $deposit_value = (float)($data['deposit_value_decimal'] ?? 0);
-        if ($deposit_type === 'percent') {
-            $deposit_value = min(max($deposit_value, 0), 100);
-            $deposit_amount = $total * ($deposit_value / 100.0);
-        } elseif ($deposit_type === 'amount') {
-            $deposit_amount = min(max($deposit_value, 0), $total);
-        } else {
-            $deposit_amount = 0.0;
-            $deposit_value = 0.0;
-        }
+        // compute totals via service
+        $calc = DocumentCalculator::compute(
+            $items,
+            $data['discount_type'] ?? 'none',
+            (float)($data['discount_value_decimal'] ?? 0),
+            $data['deposit_type'] ?? 'none',
+            (float)($data['deposit_value_decimal'] ?? 0)
+        );
 
         $inv->fill(array_merge($data, [
-            'subtotal' => round($subtotal, 2),
-            'discount_amount_decimal' => round($discount_amount,2),
-            'discount_value_decimal' => round($discount_value,2),
-            'discount_type' => $discount_type,
-            'vat_decimal' => round($vat, 2),
-            'total' => round($total, 2),
-            'deposit_amount_decimal' => round($deposit_amount,2),
-            'deposit_value_decimal' => round($deposit_value,2),
-            'deposit_type' => $deposit_type,
+            'subtotal' => $calc['subtotal'],
+            'discount_amount_decimal' => $calc['discount_amount_decimal'],
+            'discount_value_decimal' => $calc['discount_value_decimal'],
+            'discount_type' => $calc['discount_type'],
+            'vat_decimal' => $calc['vat_decimal'],
+            'total' => $calc['total'],
+            'deposit_amount_decimal' => $calc['deposit_amount_decimal'],
+            'deposit_value_decimal' => $calc['deposit_value_decimal'],
+            'deposit_type' => $calc['deposit_type'],
         ]));
         $inv->save();
 
