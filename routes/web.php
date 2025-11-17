@@ -124,6 +124,16 @@
             // Close month
             Route::post('/close/month', [AdminClose::class, 'month'])->name('close.month');
 
+            // Bank Reconciliation
+            Route::get('/bank-accounts', [\App\Http\Controllers\Admin\Accounting\BankReconciliationController::class, 'accounts'])->name('bank.accounts');
+            Route::get('/bank-accounts/{id}/transactions', [\App\Http\Controllers\Admin\Accounting\BankReconciliationController::class, 'transactions'])->name('bank.transactions');
+            Route::post('/bank-accounts/{id}/import', [\App\Http\Controllers\Admin\Accounting\BankReconciliationController::class, 'import'])->name('bank.import');
+            Route::post('/bank/reconcile/start', [\App\Http\Controllers\Admin\Accounting\BankReconciliationController::class, 'start'])->name('bank.reconcile.start');
+            Route::get('/bank/reconcile/{id}', [\App\Http\Controllers\Admin\Accounting\BankReconciliationController::class, 'show'])->name('bank.reconcile.show');
+            Route::post('/bank/reconcile/{id}/auto', [\App\Http\Controllers\Admin\Accounting\BankReconciliationController::class, 'autoMatch'])->name('bank.reconcile.auto');
+            Route::post('/bank/reconcile/{id}/match', [\App\Http\Controllers\Admin\Accounting\BankReconciliationController::class, 'manualMatch'])->name('bank.reconcile.match');
+            Route::delete('/bank/reconcile/{id}/match/{matchId}', [\App\Http\Controllers\Admin\Accounting\BankReconciliationController::class, 'unmatch'])->name('bank.reconcile.unmatch');
+
             // S2 Income / Expense
             Route::get('/income', [AdminTransactions::class, 'index'])->defaults('kind', 'income')->name('income.index');
             Route::get('/income/create', [AdminTransactions::class, 'create'])->defaults('kind', 'income')->name('income.create');
