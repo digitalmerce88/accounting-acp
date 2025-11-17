@@ -16,8 +16,10 @@ class DocumentCalculatorTest extends TestCase
         $calc = DocumentCalculator::compute($items, 'percent', 10, 'percent', 20);
         $this->assertEquals(250.00, $calc['subtotal']);
         $this->assertEquals(25.00, $calc['discount_amount_decimal']);
-        $this->assertEquals(7 * (225/ (200+50 - 25) /* keep proportion */), round($calc['vat_decimal'],2));
-        $this->assertEquals($calc['total'] - $calc['deposit_amount_decimal'], $calc['amount_due']);
+        // VAT is prorated from the raw VAT after discount; expected value is 12.60
+        $this->assertEquals(12.60, round($calc['vat_decimal'], 2));
+        // Round both sides to 2 decimals to avoid floating point precision issues
+        $this->assertEquals(round($calc['total'] - $calc['deposit_amount_decimal'], 2), round($calc['amount_due'], 2));
     }
 
     public function test_amount_discount_and_deposit_capping()

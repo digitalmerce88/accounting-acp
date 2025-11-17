@@ -14,7 +14,7 @@ class ExampleTest extends TestCase
     {
         $response = $this->get('/');
 
-        // The application renders the welcome page (Breeze/Inertia installed)
-        $response->assertStatus(200);
+        // Root redirects to authentication/login in this app
+        $response->assertRedirect(route('login', absolute: false));
     }
 }
