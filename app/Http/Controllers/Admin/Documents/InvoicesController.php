@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Invoice;
+use Illuminate\Support\Facades\Schema;
 use App\Models\InvoiceItem;
 use App\Domain\Documents\SalesService;
 use App\Domain\Documents\Numbering;
@@ -35,6 +36,8 @@ class InvoicesController extends Controller
             'due_date' => ['nullable','date'],
             'number' => ['nullable','string','max:50'],
             'is_tax_invoice' => ['nullable','boolean'],
+            'currency_code' => ['nullable','string','size:3'],
+            'fx_rate_decimal' => ['nullable','numeric','min:0'],
             'customer_id' => ['nullable','integer'],
             'customer' => ['nullable','array'],
             'customer.name' => ['nullable','string','max:200'],
@@ -71,7 +74,9 @@ class InvoicesController extends Controller
         );
 
         $inv = new Invoice();
-        $inv->fill(array_merge($data, [
+        // base_total_decimal: แปลงเป็นสกุลฐานแบบง่าย ๆจาก total / fx_rate (ถ้า fx > 0)
+        $fx = (float)($data['fx_rate_decimal'] ?? 1);
+        $fill = array_merge($data, [
             'business_id' => $bizId,
             'subtotal' => $calc['subtotal'],
             'discount_amount_decimal' => $calc['discount_amount_decimal'],
@@ -83,7 +88,13 @@ class InvoicesController extends Controller
             'deposit_value_decimal' => $calc['deposit_value_decimal'],
             'deposit_type' => $calc['deposit_type'],
             'status' => 'draft',
-        ]));
+        ]);
+        if (Schema::hasColumn('invoices','base_total_decimal')) {
+            $fill['base_total_decimal'] = $fx > 0 ? round($calc['total'] / $fx, 2) : $calc['total'];
+        }
+        // ensure deposit fields and status included
+        // fill now
+        $inv->fill($fill);
         // resolve or create customer
         if (empty($data['customer_id']) && !empty($data['customer'])) {
             $c = $data['customer'];
@@ -160,6 +171,8 @@ class InvoicesController extends Controller
             'due_date' => ['nullable','date'],
             'number' => ['nullable','string','max:50'],
             'is_tax_invoice' => ['nullable','boolean'],
+            'currency_code' => ['nullable','string','size:3'],
+            'fx_rate_decimal' => ['nullable','numeric','min:0'],
             'customer_id' => ['nullable','integer'],
             'customer' => ['nullable','array'],
             'customer.name' => ['nullable','string','max:200'],
@@ -191,6 +204,7 @@ class InvoicesController extends Controller
             (float)($data['deposit_value_decimal'] ?? 0)
         );
 
+        $fx = (float)($data['fx_rate_decimal'] ?? ($inv->fx_rate_decimal ?? 1));
         $inv->fill(array_merge($data, [
             'subtotal' => $calc['subtotal'],
             'discount_amount_decimal' => $calc['discount_amount_decimal'],
@@ -198,6 +212,7 @@ class InvoicesController extends Controller
             'discount_type' => $calc['discount_type'],
             'vat_decimal' => $calc['vat_decimal'],
             'total' => $calc['total'],
+            'base_total_decimal' => $fx > 0 ? round($calc['total'] / $fx, 2) : $calc['total'],
             'deposit_amount_decimal' => $calc['deposit_amount_decimal'],
             'deposit_value_decimal' => $calc['deposit_value_decimal'],
             'deposit_type' => $calc['deposit_type'],

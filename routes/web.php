@@ -15,14 +15,15 @@
     use Illuminate\Foundation\Application;
     use Illuminate\Support\Facades\Route;
     use Inertia\Inertia;
+    use App\Http\Controllers\Api\CurrencyController;
 
     // Redirect root to login page so users land on authentication first
     Route::get('/', function () {
         return redirect()->route('login');
     });
 
-    Route::get('/dashboard', function () {
-        $user = auth()->user();
+    Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
+        $user = $request->user();
         $menus = [];
         if ($user && method_exists($user, 'hasRole')) {
             if ($user->hasRole('admin')) {
@@ -56,10 +57,67 @@
         return response()->json(['ok' => true, 'id' => $user->id, 'email' => $user->email, 'roles' => $roles]);
     })->middleware('auth');
 
+        // Debug route: return the same auth payload that Inertia shares to the client.
+        // Useful to confirm server-side computation of is_admin without needing to inspect logs.
+        Route::get('/_debug/inertia-auth', function (\Illuminate\Http\Request $request) {
+            $user = $request->user();
+            $isAdmin = false; $roles = [];
+            try {
+                if ($user) {
+                    $roles = \Illuminate\Support\Facades\DB::table('user_role')
+                        ->join('roles','roles.id','=','user_role.role_id')
+                        ->where('user_role.user_id', $user->id)
+                        ->pluck('roles.slug')
+                        ->all();
+                    $isAdmin = in_array('admin', $roles, true);
+                }
+            } catch (\Throwable $e) {
+                return response()->json(['ok' => false, 'error' => $e->getMessage()], 500);
+            }
+            return response()->json(['ok'=>true, 'user' => $user ? ['id'=>$user->id,'name'=>$user->name,'email'=>$user->email] : null, 'is_admin'=>$isAdmin, 'roles'=>$roles]);
+        })->middleware('auth');
+
+        // Debug helper: authenticate as user id 1 (demo admin) and render a page
+        // so Blade will inject the Inertia $page and our debug writer will persist it.
+        Route::get('/_debug/emit-page', function () {
+            try {
+                \Illuminate\Support\Facades\Auth::loginUsingId(1);
+                return \Inertia\Inertia::render('Admin/Documents/PO/Index');
+            } catch (\Throwable $e) {
+                return response('error: ' . $e->getMessage(), 500);
+            }
+        });
+
+    // Lightweight currency API (no auth needed for form helpers)
+    Route::get('/api/currencies', [CurrencyController::class, 'list']);
+    Route::get('/api/currency-rate', [CurrencyController::class, 'latestRate']);
+
     Route::middleware('auth')->group(function () {
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
         Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    });
+
+    // Debug: compute the same 'auth' share for an arbitrary user id and return it.
+    // This is unauthenticated and intended for debugging only — remove afterwards.
+    Route::get('/_debug/inspect-auth/{id}', function ($id) {
+        try {
+            $id = (int) $id;
+            $user = \App\Models\User::find($id);
+            $roles = [];
+            $isAdmin = false;
+            if ($user) {
+                $roles = \Illuminate\Support\Facades\DB::table('user_role')
+                    ->join('roles','roles.id','=','user_role.role_id')
+                    ->where('user_role.user_id', $user->id)
+                    ->pluck('roles.slug')
+                    ->all();
+                $isAdmin = in_array('admin', $roles, true);
+            }
+            return response()->json([ 'ok' => true, 'user' => $user ? ['id'=>$user->id,'email'=>$user->email,'name'=>$user->name] : null, 'roles' => $roles, 'is_admin' => $isAdmin ]);
+        } catch (\Throwable $e) {
+            return response()->json([ 'ok' => false, 'error' => $e->getMessage() ], 500);
+        }
     });
 
     require __DIR__ . '/auth.php';
@@ -75,6 +133,17 @@
     // Company settings
     Route::get('/settings/company', [\App\Http\Controllers\Admin\Settings\CompanyController::class, 'edit'])->name('admin.settings.company.edit');
     Route::put('/settings/company', [\App\Http\Controllers\Admin\Settings\CompanyController::class, 'update'])->name('admin.settings.company.update');
+
+    // Exchange rates management
+    Route::prefix('settings/exchange-rates')->name('admin.settings.exchange-rates.')->group(function() {
+        $ctrl = \App\Http\Controllers\Admin\Settings\ExchangeRatesController::class;
+        Route::get('/', [$ctrl, 'index'])->name('index');
+        Route::get('/create', [$ctrl, 'create'])->name('create');
+        Route::post('/', [$ctrl, 'store'])->name('store');
+        Route::get('/{id}/edit', [$ctrl, 'edit'])->name('edit');
+        Route::put('/{id}', [$ctrl, 'update'])->name('update');
+        Route::delete('/{id}', [$ctrl, 'destroy'])->name('destroy');
+    });
 
     // Admin Accounting routes
         Route::prefix('accounting')->name('admin.accounting.')->group(function () {
@@ -152,6 +221,27 @@
             Route::delete('/expense/{id}', [AdminTransactions::class, 'destroy'])->defaults('kind', 'expense')->name('expense.destroy');
         });
 
+        // Admin assets routes
+        Route::prefix('assets')->name('admin.assets.')->group(function() {
+            $cat = \App\Http\Controllers\Admin\Assets\AssetCategoriesController::class;
+            $as  = \App\Http\Controllers\Admin\Assets\AssetsController::class;
+            // Categories
+            Route::get('/categories', [$cat,'index'])->name('categories.index');
+            Route::get('/categories/create', [$cat,'create'])->name('categories.create');
+            Route::post('/categories', [$cat,'store'])->name('categories.store');
+            Route::get('/categories/{id}/edit', [$cat,'edit'])->name('categories.edit');
+            Route::put('/categories/{id}', [$cat,'update'])->name('categories.update');
+            Route::delete('/categories/{id}', [$cat,'destroy'])->name('categories.destroy');
+            // Assets
+            Route::get('/assets', [$as,'index'])->name('assets.index');
+            Route::get('/assets/create', [$as,'create'])->name('assets.create');
+            Route::post('/assets', [$as,'store'])->name('assets.store');
+            Route::get('/assets/{id}', [$as,'show'])->name('assets.show');
+            Route::get('/assets/{id}/edit', [$as,'edit'])->name('assets.edit');
+            Route::put('/assets/{id}', [$as,'update'])->name('assets.update');
+            Route::post('/assets/{id}/dispose', [$as,'dispose'])->name('assets.dispose');
+            Route::delete('/assets/{id}', [$as,'destroy'])->name('assets.destroy');
+        });
         // Admin HR routes
         Route::prefix('hr')->name('admin.hr.')->group(function () {
             $emp = \App\Http\Controllers\Admin\HR\EmployeesController::class;
@@ -179,6 +269,7 @@
 
         // Admin Documents routes
         Route::prefix('documents')->name('admin.documents.')->group(function () {
+            $hist = \App\Http\Controllers\Admin\Documents\HistoryController::class;
             $inv = \App\Http\Controllers\Admin\Documents\InvoicesController::class;
             $bill = \App\Http\Controllers\Admin\Documents\BillsController::class;
             $quo = \App\Http\Controllers\Admin\Documents\QuotesController::class;
@@ -230,6 +321,9 @@
             Route::get('/quotes', [$quo,'index'])->name('quotes.index');
             Route::get('/quotes/create', [$quo,'create'])->name('quotes.create');
             Route::post('/quotes', [$quo,'store'])->name('quotes.store');
+            Route::delete('/quotes/{id}', [$quo,'destroy'])->name('quotes.destroy');
+            Route::get('/quotes/{id}/edit', [$quo,'edit'])->name('quotes.edit');
+            Route::put('/quotes/{id}', [$quo,'update'])->name('quotes.update');
             Route::get('/quotes/{id}', [$quo,'show'])->name('quotes.show');
             // Quote & PO PDFs
             Route::get('/quotes/{id}/pdf', [$quo,'pdf'])->name('quotes.pdf');
@@ -243,6 +337,9 @@
             Route::get('/po', [$po,'index'])->name('po.index');
             Route::get('/po/create', [$po,'create'])->name('po.create');
             Route::post('/po', [$po,'store'])->name('po.store');
+            Route::delete('/po/{id}', [$po,'destroy'])->name('po.destroy');
+            Route::get('/po/{id}/edit', [$po,'edit'])->name('po.edit');
+            Route::put('/po/{id}', [$po,'update'])->name('po.update');
             Route::get('/po/{id}', [$po,'show'])->name('po.show');
             Route::get('/po/{id}/pdf', [$po,'pdf'])->name('po.pdf');
             // Approval workflow
@@ -250,6 +347,9 @@
             Route::post('/po/{id}/approve', [$po,'approve'])->name('po.approve');
             Route::post('/po/{id}/lock', [$po,'lock'])->name('po.lock');
             Route::post('/po/{id}/unlock', [$po,'unlock'])->name('po.unlock');
+
+            // Document History (approval + audit)
+            Route::get('/{type}/{id}/history', [$hist,'show'])->name('history.show');
         });
 
         // Admin Users management (admin only)

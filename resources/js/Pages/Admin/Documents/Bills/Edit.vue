@@ -1,6 +1,12 @@
 <template>
   <AdminLayout>
     <h1 class="text-xl font-semibold mb-4">แก้ไขบิล {{ form.number || form.id }}</h1>
+    <div class="mt-2 mb-4 flex gap-2">
+      <button v-if="item.approval_status==='draft'" @click="openModal('submit')" class="px-3 py-1 bg-yellow-600 text-white rounded text-sm">ส่งอนุมัติ</button>
+      <button v-if="auth.is_admin && item.approval_status==='submitted'" @click="openModal('approve')" class="px-3 py-1 bg-green-700 text-white rounded text-sm">อนุมัติ</button>
+      <button v-if="auth.is_admin && item.approval_status==='approved'" @click="openModal('lock')" class="px-3 py-1 bg-gray-800 text-white rounded text-sm">ล็อก</button>
+      <button v-if="auth.is_admin && item.approval_status==='locked'" @click="openModal('unlock')" class="px-3 py-1 bg-gray-500 text-white rounded text-sm">ปลดล็อก</button>
+    </div>
     <form @submit.prevent="submit" class="space-y-4 text-sm">
       <div class="p-3 border rounded">
         <div class="font-medium mb-2">ผู้ขาย/ผู้รับเงิน (Vendor)</div>
@@ -43,6 +49,17 @@
         <div>
           <label class="block text-gray-600 mb-1">เลขที่</label>
           <input v-model="form.number" type="text" class="w-full border rounded p-2" />
+        </div>
+        <div>
+          <label class="block text-gray-600 mb-1">สกุลเงิน</label>
+          <input v-model="form.currency_code" @change="onCurrencyChange" list="currency-list" type="text" maxlength="3" class="w-full border rounded p-2 uppercase" />
+          <datalist id="currency-list">
+            <option v-for="c in currencies" :key="c.code" :value="c.code">{{ c.code }} - {{ c.name }}</option>
+          </datalist>
+        </div>
+        <div>
+          <label class="block text-gray-600 mb-1">อัตราแลกเปลี่ยน</label>
+          <input v-model.number="form.fx_rate_decimal" type="number" step="0.00000001" min="0" class="w-full border rounded p-2 text-right" />
         </div>
         <div>
           <label class="block text-gray-600 mb-1">WHT %</label>
@@ -93,32 +110,69 @@
         <a :href="`/admin/documents/bills/${form.id}`" class="px-3 py-1 border rounded">ยกเลิก</a>
       </div>
     </form>
+
+    <ApprovalCommentModal
+      :show="showModal"
+      :title="modalTitle"
+      v-model="comment"
+      :submitting="submitting"
+      @submit="doAction"
+      @cancel="closeModal"
+    />
+
   </AdminLayout>
 </template>
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
+import ApprovalCommentModal from '@/Components/ApprovalCommentModal.vue'
 import { usePage, router } from '@inertiajs/vue3'
-import { reactive, computed, ref } from 'vue'
+import { reactive, ref, computed, onMounted } from 'vue'
 import { alertInfo } from '@/utils/swal'
+import { useDocumentCalculator } from '@/composables/useDocumentCalculator'
 const item = usePage().props.item
+const auth = usePage().props.auth || { is_admin: false }
 const form = reactive({
   id: item.id,
   bill_date: item.bill_date,
   due_date: item.due_date,
   number: item.number,
+  currency_code: item.currency_code || 'THB',
+  fx_rate_decimal: Number(item.fx_rate_decimal || 1),
   wht_rate_decimal: Number(item.wht_rate_decimal||0),
   vendor: { name: item.vendor?.name||'', tax_id: item.vendor?.tax_id||'', phone: item.vendor?.phone||'', address: item.vendor?.address||'' },
   items: item.items?.map(it=>({ name: it.name, qty_decimal: Number(it.qty_decimal), unit_price_decimal: Number(it.unit_price_decimal), vat_rate_decimal: Number(it.vat_rate_decimal)})) || []
 })
 const vendorQuery = ref('')
 const processing = ref(false)
+const currencies = ref([])
+const baseCurrency = ref('THB')
 // national_id no longer used
-const subtotal = computed(()=> form.items.reduce((s,it)=> s + (Number(it.qty_decimal||0)*Number(it.unit_price_decimal||0)), 0))
-const vat = computed(()=> form.items.reduce((s,it)=> s + (Number(it.qty_decimal||0)*Number(it.unit_price_decimal||0)) * (Number(it.vat_rate_decimal||0)/100), 0))
-const total = computed(()=> subtotal.value + vat.value)
+const { subtotal, vat, total } = useDocumentCalculator(form)
 function addItem(){ form.items.push({ name: '', qty_decimal: 1, unit_price_decimal: 0, vat_rate_decimal: 0 }) }
 function removeItem(i){ form.items.splice(i,1) }
 function fmt(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) }
+async function loadCurrencies(){
+  try{
+    const res = await fetch('/api/currencies')
+    const data = await res.json()
+    currencies.value = data.list || []
+    baseCurrency.value = data.base || 'THB'
+  }catch(e){ console.error(e) }
+}
+async function onCurrencyChange(){
+  const code = (form.currency_code || '').toUpperCase()
+  form.currency_code = code
+  if(!code){ return }
+  try{
+    const res = await fetch(`/api/currency-rate?code=${encodeURIComponent(code)}`)
+    if(res.ok){
+      const data = await res.json()
+      form.fx_rate_decimal = Number(data.rate || 1)
+    }else{
+      form.fx_rate_decimal = (code === baseCurrency.value) ? 1 : form.fx_rate_decimal
+    }
+  }catch(e){ console.error(e) }
+}
 async function searchVendor(){
   if(!vendorQuery.value) return
   try{
@@ -139,5 +193,26 @@ async function searchVendor(){
 function submit(){
   processing.value = true
   router.put(`/admin/documents/bills/${form.id}`, form, { onFinish(){ processing.value = false } })
+}
+
+onMounted(() => { loadCurrencies() })
+
+// Approval modal logic
+const showModal = ref(false)
+const action = ref('submit')
+const comment = ref('')
+const submitting = ref(false)
+const modalTitle = computed(()=> action.value==='submit' ? 'ส่งอนุมัติเอกสาร' : action.value==='approve' ? 'อนุมัติเอกสาร' : action.value==='lock' ? 'ล็อกเอกสาร' : 'ปลดล็อกเอกสาร')
+function openModal(act){ action.value = act; comment.value=''; showModal.value=true }
+function closeModal(){ showModal.value=false }
+async function doAction(){
+  submitting.value = true
+  const id = form.id
+  const payload = { comment: comment.value }
+  const url = action.value==='submit' ? `/admin/documents/bills/${id}/submit` :
+              action.value==='approve' ? `/admin/documents/bills/${id}/approve` :
+              action.value==='lock' ? `/admin/documents/bills/${id}/lock` :
+              `/admin/documents/bills/${id}/unlock`
+  router.post(url, payload, { onFinish: () => { submitting.value=false; showModal.value=false } })
 }
 </script>

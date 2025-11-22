@@ -106,6 +106,88 @@ class PurchaseOrdersController extends Controller
         }
         return Inertia::render('Admin/Documents/PO/Show', ['item'=>$item]);
     }
+    public function edit(Request $request, int $id)
+    {
+        $bizId = (int) ($request->user()->business_id ?? 1);
+        $item = PurchaseOrder::where('business_id',$bizId)->with(['items','vendor'])->findOrFail($id);
+        if (in_array($item->status, ['paid','void']) || in_array($item->approval_status, ['approved','locked'])) {
+            return redirect()->back()->with('error','ไม่สามารถแก้ไขเอกสารที่ชำระแล้ว/ยกเลิกแล้ว');
+        }
+        return Inertia::render('Admin/Documents/PO/Edit', ['item'=>$item]);
+    }
+
+    public function update(Request $request, int $id)
+    {
+        $bizId = (int) ($request->user()->business_id ?? 1);
+        $po = PurchaseOrder::where('business_id',$bizId)->with(['items','vendor'])->findOrFail($id);
+        if (in_array($po->status, ['paid','void']) || in_array($po->approval_status, ['approved','locked'])) {
+            return redirect()->back()->with('error','ไม่สามารถแก้ไขเอกสารที่ชำระแล้ว/ยกเลิกแล้ว');
+        }
+        $data = $request->validate([
+            'issue_date' => ['required','date'],
+            'number' => ['nullable','string','max:50'],
+            'vendor_id' => ['nullable','integer'],
+            'vendor' => ['nullable','array'],
+            'vendor.name' => ['nullable','string','max:200'],
+            'vendor.tax_id' => ['nullable','string','max:30'],
+            'vendor.phone' => ['nullable','string','max:30'],
+            'vendor.email' => ['nullable','string','max:120'],
+            'vendor.address' => ['nullable','string','max:500'],
+            'note' => ['nullable','string','max:500'],
+            'items' => ['required','array','min:1'],
+            'items.*.name' => ['required','string','max:200'],
+            'items.*.qty_decimal' => ['required','numeric','min:0'],
+            'items.*.unit_price_decimal' => ['required','numeric','min:0'],
+            'items.*.vat_rate_decimal' => ['nullable','numeric','min:0'],
+            'discount_type' => ['nullable','in:none,amount,percent'],
+            'discount_value_decimal' => ['nullable','numeric','min:0'],
+            'deposit_type' => ['nullable','in:none,amount,percent'],
+            'deposit_value_decimal' => ['nullable','numeric','min:0'],
+        ]);
+        $items = $data['items']; unset($data['items']);
+        $calc = DocumentCalculator::compute(
+            $items,
+            $data['discount_type'] ?? 'none',
+            (float)($data['discount_value_decimal'] ?? 0),
+            $data['deposit_type'] ?? 'none',
+            (float)($data['deposit_value_decimal'] ?? 0)
+        );
+        $po->fill(array_merge($data,[
+            'subtotal'=>$calc['subtotal'],
+            'discount_amount_decimal' => $calc['discount_amount_decimal'],
+            'discount_value_decimal' => $calc['discount_value_decimal'],
+            'discount_type' => $calc['discount_type'],
+            'vat_decimal'=>$calc['vat_decimal'],
+            'total'=>$calc['total'],
+            'deposit_amount_decimal' => $calc['deposit_amount_decimal'],
+            'deposit_value_decimal' => $calc['deposit_value_decimal'],
+            'deposit_type' => $calc['deposit_type'],
+        ]));
+        // vendor resolve/create
+        if (empty($data['vendor_id']) && !empty($data['vendor'])){
+            $v = $data['vendor'];
+            $existing = null;
+            if (!empty($v['tax_id']) || !empty($v['phone'])){
+                $existing = \App\Models\Vendor::where('business_id',$bizId)
+                    ->when(!empty($v['tax_id']), fn($q)=>$q->orWhere('tax_id',$v['tax_id']))
+                    ->when(!empty($v['phone']), fn($q)=>$q->orWhere('phone',$v['phone']))
+                    ->first();
+            }
+            if ($existing) { $po->vendor_id = $existing->id; }
+            elseif (!empty($v['name'])){
+                $created = \App\Models\Vendor::create([
+                    'business_id'=>$bizId,
+                    'name'=>$v['name'],'tax_id'=>$v['tax_id']??null,'phone'=>$v['phone']??null,'email'=>$v['email']??null,'address'=>$v['address']??null,
+                ]);
+                $po->vendor_id = $created->id;
+            }
+        }
+        if (empty($po->number)) { $po->number = Numbering::next('po', $bizId, $po->issue_date); }
+        $po->save();
+        PoItem::where('purchase_order_id', $po->id)->delete();
+        foreach($items as $it){ PoItem::create(['purchase_order_id'=>$po->id,'name'=>$it['name'],'qty_decimal'=>$it['qty_decimal'],'unit_price_decimal'=>$it['unit_price_decimal'],'vat_rate_decimal'=>$it['vat_rate_decimal']??0]); }
+        return redirect()->route('admin.documents.po.show', $po->id)->with('success','บันทึกการแก้ไขแล้ว');
+    }
     public function pdf(Request $request, int $id)
     {
         $bizId = (int) ($request->user()->business_id ?? 1);
@@ -178,5 +260,17 @@ class PurchaseOrdersController extends Controller
         if ($po->approval_status !== 'locked') { return back()->with('error','ปลดล็อกได้เฉพาะเอกสารที่ถูกล็อก'); }
         ApprovalService::unlock($po, $bizId, (int)$user->id, (string)($request->get('comment') ?? null));
         return back()->with('success','ปลดล็อกเอกสารแล้ว');
+    }
+
+    public function destroy(Request $request, int $id)
+    {
+        $bizId = (int) ($request->user()->business_id ?? 1);
+        $po = PurchaseOrder::where('business_id', $bizId)->findOrFail($id);
+        if ($po->status !== 'draft') {
+            return redirect()->back()->with('error', 'ลบได้เฉพาะสถานะฉบับร่าง');
+        }
+        PoItem::where('purchase_order_id', $po->id)->delete();
+        $po->delete();
+        return redirect()->route('admin.documents.po.index')->with('success', 'ลบใบสั่งซื้อแล้ว');
     }
 }

@@ -4,6 +4,8 @@ namespace App\Domain\Documents;
 
 use App\Models\Invoice;
 use App\Domain\Accounting\PostingService;
+use App\Domain\Accounting\Services\FxGainLossService;
+use Illuminate\Support\Carbon;
 
 class SalesService
 {
@@ -27,6 +29,20 @@ class SalesService
             'category_id' => null,
             'customer_id' => $inv->customer_id,
         ]);
+
+        // FX Gain/Loss posting if currency != THB
+        if (!empty($inv->currency_code) && strtoupper($inv->currency_code) !== 'THB') {
+            // Fetch latest rate where base_currency = invoice currency, quote THB, rate_date <= settlement date
+            $settlementRate = \App\Models\ExchangeRate::where('base_currency', strtoupper($inv->currency_code))
+                ->where('quote_currency', 'THB')
+                ->where('rate_date', '<=', $date)
+                ->orderByDesc('rate_date')
+                ->value('rate_decimal');
+
+            if ($settlementRate && $settlementRate > 0) {
+                (new FxGainLossService())->postInvoiceSettlement($inv, (float) $settlementRate, $date);
+            }
+        }
 
         $inv->status = 'paid';
         $inv->save();

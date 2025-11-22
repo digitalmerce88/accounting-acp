@@ -1,17 +1,19 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3'
+import AdminLayout from '@/Layouts/AdminLayout.vue'
 const props = defineProps({ account: Object, rows: Object })
 const form = useForm({ file: null, mapping: {} })
 function onFile(e){ form.file = e.target.files[0] }
 function submit(){ form.post(route('admin.accounting.bank.import', props.account.id)) }
 </script>
 <template>
-  <Head :title="`Bank Tx: ${account.account_name}`" />
-  <div class="p-6 space-y-6">
-    <div class="flex items-center justify-between">
-      <h1 class="text-xl font-semibold">Transactions — {{ account.account_name }}</h1>
-      <Link :href="route('admin.accounting.bank.accounts')" class="text-indigo-600">Back</Link>
-    </div>
+  <AdminLayout>
+    <Head :title="`Bank Tx: ${account.account_name}`" />
+    <div class="p-6 space-y-6">
+      <div class="flex items-center justify-between">
+        <h1 class="text-xl font-semibold">Transactions — {{ account.account_name }}</h1>
+        <Link :href="route('admin.accounting.bank.accounts')" class="text-indigo-600">Back</Link>
+      </div>
     <div class="bg-white p-4 rounded shadow">
       <form @submit.prevent="submit" class="flex items-center gap-3">
         <input type="file" accept=".csv,.txt" @change="onFile" class="border rounded p-2" />
@@ -61,5 +63,6 @@ function submit(){ form.post(route('admin.accounting.bank.import', props.account
         </div>
       </form>
     </div>
-  </div>
+    </div>
+  </AdminLayout>
 </template>

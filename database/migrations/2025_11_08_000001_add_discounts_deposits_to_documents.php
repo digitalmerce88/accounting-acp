@@ -15,6 +15,16 @@ return new class extends Migration
             $table->string('deposit_type')->default('none');
             $table->decimal('deposit_value_decimal', 15, 2)->nullable();
             $table->decimal('deposit_amount_decimal', 15, 2)->nullable();
+                // multi-currency fields (added later but grouped here for clarity on current schema when fresh install)
+                if (!Schema::hasColumn('invoices','currency_code')) {
+                    $table->string('currency_code',3)->nullable()->index();
+                }
+                if (!Schema::hasColumn('invoices','fx_rate_decimal')) {
+                    $table->decimal('fx_rate_decimal',18,8)->default(1);
+                }
+                if (!Schema::hasColumn('invoices','base_total_decimal')) {
+                    $table->decimal('base_total_decimal',15,2)->default(0);
+                }
         });
 
         Schema::table('quotes', function (Blueprint $table) {
@@ -42,6 +52,15 @@ return new class extends Migration
             $table->string('deposit_type')->default('none');
             $table->decimal('deposit_value_decimal', 15, 2)->nullable();
             $table->decimal('deposit_amount_decimal', 15, 2)->nullable();
+                if (!Schema::hasColumn('bills','currency_code')) {
+                    $table->string('currency_code',3)->nullable()->index();
+                }
+                if (!Schema::hasColumn('bills','fx_rate_decimal')) {
+                    $table->decimal('fx_rate_decimal',18,8)->default(1);
+                }
+                if (!Schema::hasColumn('bills','base_total_decimal')) {
+                    $table->decimal('base_total_decimal',15,2)->default(0);
+                }
         });
     }
 

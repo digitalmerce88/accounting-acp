@@ -4,6 +4,7 @@ namespace App\Domain\Documents;
 
 use App\Models\{Bill, WhtCertificate};
 use App\Domain\Accounting\PostingService;
+use App\Domain\Accounting\Services\FxGainLossService;
 
 class PurchaseService
 {
@@ -29,6 +30,19 @@ class PurchaseService
             'category_id' => null,
             'vendor_id' => $bill->vendor_id,
         ]);
+
+        // FX Gain/Loss posting if currency != THB
+        if (!empty($bill->currency_code) && strtoupper($bill->currency_code) !== 'THB') {
+            $settlementRate = \App\Models\ExchangeRate::where('base_currency', strtoupper($bill->currency_code))
+                ->where('quote_currency', 'THB')
+                ->where('rate_date', '<=', $date)
+                ->orderByDesc('rate_date')
+                ->value('rate_decimal');
+
+            if ($settlementRate && $settlementRate > 0) {
+                (new FxGainLossService())->postBillSettlement($bill, (float) $settlementRate, $date);
+            }
+        }
 
         // Generate WHT certificate record (summary) if any
         $whtAmount = (float) ($bill->wht_amount_decimal ?? 0);

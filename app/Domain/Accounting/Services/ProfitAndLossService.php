@@ -2,8 +2,10 @@
 
 namespace App\Domain\Accounting\Services;
 
-use App\Models\JournalLine;
+use App\Models\{JournalLine, Invoice, Bill};
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class ProfitAndLossService
 {
@@ -16,13 +18,57 @@ class ProfitAndLossService
         $expense = $this->sumType('expense', 'debit', $start, $end);
         $net = round($revenue - $expense, 2);
 
+        // Base currency totals from invoices & bills (multi-currency normalization)
+        $revenueBase = $this->sumDocumentBase(Invoice::class, 'issue_date', $start, $end);
+        $expenseBase = $this->sumDocumentBase(Bill::class, 'bill_date', $start, $end);
+        $netBase = round($revenueBase - $expenseBase, 2);
+
         return [
             'from' => $start->toDateString(),
             'to' => $end->toDateString(),
             'revenue' => $revenue,
             'expense' => $expense,
             'net' => $net,
+            'revenue_base' => $revenueBase,
+            'expense_base' => $expenseBase,
+            'net_base' => $netBase,
         ];
+    }
+
+    /**
+     * Sum the document's base total robustly - fallback if column missing.
+     */
+    private function sumDocumentBase(string $modelClass, string $dateColumn, $start, $end): float
+    {
+        $model = new $modelClass;
+        $table = $model->getTable();
+
+        if (Schema::hasColumn($table, 'base_total_decimal')) {
+            return (float) $modelClass::query()
+                ->whereBetween($dateColumn, [$start->toDateString(), $end->toDateString()])
+                ->where('status', '!=', 'draft')
+                ->sum('base_total_decimal');
+        }
+
+        // If fx exists, approximate base by total * fx_rate_decimal
+        if (Schema::hasColumn($table, 'fx_rate_decimal') && Schema::hasColumn($table, 'total')) {
+            $res = $modelClass::query()
+                ->whereBetween($dateColumn, [$start->toDateString(), $end->toDateString()])
+                ->where('status', '!=', 'draft')
+                ->selectRaw('SUM(total * COALESCE(fx_rate_decimal,1)) as aggregate')
+                ->value('aggregate');
+            return (float) ($res ?? 0);
+        }
+
+        // Last resort - sum the total column if present
+        if (Schema::hasColumn($table, 'total')) {
+            return (float) $modelClass::query()
+                ->whereBetween($dateColumn, [$start->toDateString(), $end->toDateString()])
+                ->where('status', '!=', 'draft')
+                ->sum('total');
+        }
+
+        return 0.0;
     }
 
     private function sumType(string $type, string $polarity, $start, $end): float

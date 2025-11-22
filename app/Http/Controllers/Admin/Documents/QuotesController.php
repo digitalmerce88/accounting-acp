@@ -97,6 +97,90 @@ class QuotesController extends Controller
         return redirect()->route('admin.documents.quotes.show', $q->id)->with('success','สร้างใบเสนอราคาแล้ว');
     }
 
+    public function edit(Request $request, int $id)
+    {
+        $bizId = (int) ($request->user()->business_id ?? 1);
+        $item = Quote::where('business_id',$bizId)->with(['items','customer'])->findOrFail($id);
+        if (in_array($item->status, ['paid','void']) || in_array($item->approval_status, ['approved','locked'])) {
+            return redirect()->back()->with('error','ไม่สามารถแก้ไขเอกสารที่ชำระแล้ว/ยกเลิกแล้ว');
+        }
+        return Inertia::render('Admin/Documents/Quotes/Edit', ['item'=>$item]);
+    }
+
+    public function update(Request $request, int $id)
+    {
+        $bizId = (int) ($request->user()->business_id ?? 1);
+        $q = Quote::where('business_id',$bizId)->with(['items','customer'])->findOrFail($id);
+        if (in_array($q->status, ['paid','void']) || in_array($q->approval_status, ['approved','locked'])) {
+            return redirect()->back()->with('error','ไม่สามารถแก้ไขเอกสารที่ชำระแล้ว/ยกเลิกแล้ว');
+        }
+        $data = $request->validate([
+            'issue_date' => ['required','date'],
+            'number' => ['nullable','string','max:50'],
+            'subject' => ['nullable','string','max:200'],
+            'customer_id' => ['nullable','integer'],
+            'customer' => ['nullable','array'],
+            'customer.name' => ['nullable','string','max:200'],
+            'customer.tax_id' => ['nullable','string','max:30'],
+            'customer.phone' => ['nullable','string','max:30'],
+            'customer.email' => ['nullable','string','max:120'],
+            'customer.address' => ['nullable','string','max:500'],
+            'note' => ['nullable','string','max:500'],
+            'items' => ['required','array','min:1'],
+            'items.*.name' => ['required','string','max:200'],
+            'items.*.qty_decimal' => ['required','numeric','min:0'],
+            'items.*.unit_price_decimal' => ['required','numeric','min:0'],
+            'items.*.vat_rate_decimal' => ['nullable','numeric','min:0'],
+            'discount_type' => ['nullable','in:none,amount,percent'],
+            'discount_value_decimal' => ['nullable','numeric','min:0'],
+            'deposit_type' => ['nullable','in:none,amount,percent'],
+            'deposit_value_decimal' => ['nullable','numeric','min:0'],
+        ]);
+        $items = $data['items']; unset($data['items']);
+        $calc = DocumentCalculator::compute(
+            $items,
+            $data['discount_type'] ?? 'none',
+            (float)($data['discount_value_decimal'] ?? 0),
+            $data['deposit_type'] ?? 'none',
+            (float)($data['deposit_value_decimal'] ?? 0)
+        );
+        $q->fill(array_merge($data,[
+            'subtotal'=>$calc['subtotal'],
+            'discount_amount_decimal' => $calc['discount_amount_decimal'],
+            'discount_value_decimal' => $calc['discount_value_decimal'],
+            'discount_type' => $calc['discount_type'],
+            'vat_decimal'=>$calc['vat_decimal'],
+            'total'=>$calc['total'],
+            'deposit_amount_decimal' => $calc['deposit_amount_decimal'],
+            'deposit_value_decimal' => $calc['deposit_value_decimal'],
+            'deposit_type' => $calc['deposit_type'],
+        ]));
+        // customer resolve/create
+        if (empty($data['customer_id']) && !empty($data['customer'])){
+            $c = $data['customer'];
+            $existing = null;
+            if (!empty($c['tax_id']) || !empty($c['phone'])){
+                $existing = \App\Models\Customer::where('business_id',$bizId)
+                    ->when(!empty($c['tax_id']), fn($q)=>$q->orWhere('tax_id',$c['tax_id']))
+                    ->when(!empty($c['phone']), fn($q)=>$q->orWhere('phone',$c['phone']))
+                    ->first();
+            }
+            if ($existing) { $q->customer_id = $existing->id; }
+            elseif (!empty($c['name'])){
+                $created = \App\Models\Customer::create([
+                    'business_id'=>$bizId,
+                    'name'=>$c['name'],'tax_id'=>$c['tax_id']??null,'phone'=>$c['phone']??null,'email'=>$c['email']??null,'address'=>$c['address']??null,
+                ]);
+                $q->customer_id = $created->id;
+            }
+        }
+        if (empty($q->number)) { $q->number = Numbering::next('quote', $bizId, $q->issue_date); }
+        $q->save();
+        QuoteItem::where('quote_id', $q->id)->delete();
+        foreach($items as $it){ QuoteItem::create(['quote_id'=>$q->id,'name'=>$it['name'],'qty_decimal'=>$it['qty_decimal'],'unit_price_decimal'=>$it['unit_price_decimal'],'vat_rate_decimal'=>$it['vat_rate_decimal']??0]); }
+        return redirect()->route('admin.documents.quotes.show', $q->id)->with('success','บันทึกการแก้ไขแล้ว');
+    }
+
     public function show(Request $request, int $id)
     {
         $bizId = (int) ($request->user()->business_id ?? 1);
@@ -139,6 +223,18 @@ class QuotesController extends Controller
         $pdf = Pdf::setOptions(['isHtml5ParserEnabled'=>true,'isRemoteEnabled'=>true])->loadView('documents.quote_pdf', [ 'quote' => $item, 'company' => $companyArr ]);
         if ($request->boolean('dl') || $request->boolean('download')) { return $pdf->download($filename); }
         return $pdf->stream($filename, ['Attachment' => false]);
+    }
+
+    public function destroy(Request $request, int $id)
+    {
+        $bizId = (int) ($request->user()->business_id ?? 1);
+        $q = Quote::where('business_id', $bizId)->findOrFail($id);
+        if ($q->status !== 'draft') {
+            return redirect()->back()->with('error', 'ลบได้เฉพาะสถานะฉบับร่าง');
+        }
+        QuoteItem::where('quote_id', $q->id)->delete();
+        $q->delete();
+        return redirect()->route('admin.documents.quotes.index')->with('success', 'ลบใบเสนอราคาแล้ว');
     }
 
     public function submit(Request $request, int $id)

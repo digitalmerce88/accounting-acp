@@ -44,6 +44,17 @@
           <label class="block text-gray-600 mb-1">เลขที่</label>
           <input v-model="form.number" type="text" class="w-full border rounded p-2" placeholder="เว้นว่างเพื่อรันภายหลัง" />
         </div>
+        <div>
+          <label class="block text-gray-600 mb-1">สกุลเงิน (เช่น THB, USD)</label>
+          <input v-model="form.currency_code" @change="onCurrencyChange" list="currency-list" type="text" maxlength="3" class="w-full border rounded p-2 uppercase" placeholder="THB" />
+          <datalist id="currency-list">
+            <option v-for="c in currencies" :key="c.code" :value="c.code">{{ c.code }} - {{ c.name }}</option>
+          </datalist>
+        </div>
+        <div>
+          <label class="block text-gray-600 mb-1">อัตราแลกเปลี่ยน (เทียบ Base)</label>
+          <input v-model.number="form.fx_rate_decimal" type="number" step="0.00000001" min="0" class="w-full border rounded p-2 text-right" placeholder="1.00000000" />
+        </div>
         <div class="flex items-center gap-2">
           <input id="is_tax" v-model="form.is_tax_invoice" type="checkbox" class="h-4 w-4" />
           <label for="is_tax" class="text-gray-700">ออกใบกำกับภาษี</label>
@@ -120,13 +131,16 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { router } from '@inertiajs/vue3'
-import { reactive, computed, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { alertInfo } from '@/utils/swal'
+import { useDocumentCalculator } from '@/composables/useDocumentCalculator'
 
 const form = reactive({
   issue_date: new Date().toISOString().slice(0,10),
   due_date: '',
   number: '',
+  currency_code: 'THB',
+  fx_rate_decimal: 1,
   is_tax_invoice: false,
   customer: { name: '', tax_id: '', phone: '', address: '' },
   items: [ { name: '', qty_decimal: 1, unit_price_decimal: 0, vat_rate_decimal: 0 } ],
@@ -137,35 +151,40 @@ const form = reactive({
 })
 const customerQuery = ref('')
 const processing = ref(false)
+const currencies = ref([])
+const baseCurrency = ref('THB')
 // national_id no longer used
 
-const subtotal = computed(()=> form.items.reduce((s,it)=> s + (Number(it.qty_decimal||0)*Number(it.unit_price_decimal||0)), 0))
-const discount_amount = computed(()=>{
-  const t = form.discount_type || 'none'
-  const v = Number(form.discount_value_decimal||0)
-  if(t==='percent') return subtotal.value * (Math.min(Math.max(v,0),100)/100)
-  if(t==='amount') return Math.min(Math.max(v,0), subtotal.value)
-  return 0
-})
-const adjusted_subtotal = computed(()=> subtotal.value - discount_amount.value)
-const vat = computed(()=> {
-  if(subtotal.value <= 0) return 0
-  const raw = form.items.reduce((s,it)=> s + (Number(it.qty_decimal||0)*Number(it.unit_price_decimal||0)) * (Number(it.vat_rate_decimal||0)/100), 0)
-  return raw * (adjusted_subtotal.value / (subtotal.value || 1))
-})
-const total = computed(()=> adjusted_subtotal.value + vat.value)
-const deposit_amount = computed(()=>{
-  const t = form.deposit_type || 'none'
-  const v = Number(form.deposit_value_decimal||0)
-  if(t==='percent') return total.value * (Math.min(Math.max(v,0),100)/100)
-  if(t==='amount') return Math.min(Math.max(v,0), total.value)
-  return 0
-})
-const amount_due = computed(()=> total.value - deposit_amount.value)
+const { subtotal, discount_amount, adjusted_subtotal, vat, total, deposit_amount, amount_due } = useDocumentCalculator(form)
 
 function addItem(){ form.items.push({ name: '', qty_decimal: 1, unit_price_decimal: 0, vat_rate_decimal: 0 }) }
 function removeItem(i){ form.items.splice(i,1) }
 function fmt(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) }
+
+async function loadCurrencies(){
+  try{
+    const res = await fetch('/api/currencies')
+    const data = await res.json()
+    currencies.value = data.list || []
+    baseCurrency.value = data.base || 'THB'
+  }catch(e){ console.error(e) }
+}
+
+async function onCurrencyChange(){
+  const code = (form.currency_code || '').toUpperCase()
+  form.currency_code = code
+  if(!code){ return }
+  try{
+    const res = await fetch(`/api/currency-rate?code=${encodeURIComponent(code)}`)
+    if(res.ok){
+      const data = await res.json()
+      form.fx_rate_decimal = Number(data.rate || 1)
+    }else{
+      // fallback: base currency = 1
+      form.fx_rate_decimal = (code === baseCurrency.value) ? 1 : form.fx_rate_decimal
+    }
+  }catch(e){ console.error(e) }
+}
 
 async function searchCustomer(){
   if(!customerQuery.value) return
@@ -191,4 +210,6 @@ function submit(){
     onFinish(){ processing.value = false }
   })
 }
+
+onMounted(() => { loadCurrencies() })
 </script>

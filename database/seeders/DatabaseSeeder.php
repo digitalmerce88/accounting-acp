@@ -12,6 +12,8 @@ class DatabaseSeeder extends Seeder
             DemoUsersSeeder::class,
             CoASeeder::class,
             SimpleSetupSeeder::class,
+            CurrencySeeder::class,
+            ExchangeRateSeeder::class,
             DemoDataSeeder::class,
         ]);
     }

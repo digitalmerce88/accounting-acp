@@ -1,15 +1,17 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3'
+import AdminLayout from '@/Layouts/AdminLayout.vue'
 const props = defineProps({ item: Object })
 function autoMatch(){ router.post(route('admin.accounting.bank.reconcile.auto', props.item.id)) }
 </script>
 <template>
-  <Head title="Reconciliation" />
-  <div class="p-6 space-y-6">
-    <div class="flex items-center justify-between">
-      <h1 class="text-xl font-semibold">Reconciliation #{{ item.id }}</h1>
-      <Link :href="route('admin.accounting.bank.accounts')" class="text-indigo-600">Back</Link>
-    </div>
+  <AdminLayout>
+    <Head title="Reconciliation" />
+    <div class="p-6 space-y-6">
+      <div class="flex items-center justify-between">
+        <h1 class="text-xl font-semibold">Reconciliation #{{ item.id }}</h1>
+        <Link :href="route('admin.accounting.bank.accounts')" class="text-indigo-600">Back</Link>
+      </div>
 
     <div class="bg-white p-4 rounded shadow grid grid-cols-1 md:grid-cols-4 gap-3">
       <div>
@@ -55,5 +57,6 @@ function autoMatch(){ router.post(route('admin.accounting.bank.reconcile.auto', 
         </tbody>
       </table>
     </div>
-  </div>
+    </div>
+  </AdminLayout>
 </template>

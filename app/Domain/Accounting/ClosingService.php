@@ -11,7 +11,7 @@ class ClosingService
     public function closeMonth(int $businessId, int $year, int $month, string $equityCode = '301'): JournalEntry
     {
         // idempotent: if already closed, throw
-        if (ClosingPeriod::where(compact('businessId','year','month'))->exists()) {
+        if (ClosingPeriod::where(['business_id' => $businessId, 'period_year' => $year, 'period_month' => $month])->exists()) {
             throw new \RuntimeException('Period already closed');
         }
         $date = Carbon::createFromDate($year, $month, 1)->endOfMonth()->toDateString();

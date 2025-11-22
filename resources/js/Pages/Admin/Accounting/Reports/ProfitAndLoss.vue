@@ -6,14 +6,17 @@
       <div class="p-4 bg-white border rounded">
         <div class="text-xs text-gray-500">รายได้</div>
         <div class="text-2xl font-semibold text-green-700">{{ format(revenue) }}</div>
+        <div class="text-xs text-gray-400 mt-1">ฐานสกุลเงิน ({{ baseCurrency }}): {{ format(revenue_base) }}</div>
       </div>
       <div class="p-4 bg-white border rounded">
         <div class="text-xs text-gray-500">ค่าใช้จ่าย</div>
         <div class="text-2xl font-semibold text-red-700">{{ format(expense) }}</div>
+        <div class="text-xs text-gray-400 mt-1">ฐานสกุลเงิน ({{ baseCurrency }}): {{ format(expense_base) }}</div>
       </div>
       <div class="p-4 bg-white border rounded">
         <div class="text-xs text-gray-500">กำไรสุทธิ</div>
         <div :class="net >= 0 ? 'text-green-700' : 'text-red-700'" class="text-2xl font-semibold">{{ format(net) }}</div>
+        <div class="text-xs text-gray-400 mt-1" :class="net_base >= 0 ? 'text-green-600' : 'text-red-600'">ฐานสกุลเงิน ({{ baseCurrency }}): {{ format(net_base) }}</div>
       </div>
     </div>
     <div class="mt-4 flex items-center gap-3">
@@ -37,6 +40,11 @@ const to = computed(()=> p.to)
 const revenue = computed(()=> p.revenue || 0)
 const expense = computed(()=> p.expense || 0)
 const net = computed(()=> p.net || 0)
+const revenue_base = computed(()=> p.revenue_base || 0)
+const expense_base = computed(()=> p.expense_base || 0)
+const net_base = computed(()=> p.net_base || 0)
+// base currency code exposed via shared `app.base_currency`
+const baseCurrency = computed(() => (p.app && p.app.base_currency) ? p.app.base_currency : 'THB')
 function format(n){
   return new Intl.NumberFormat('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n||0)
 }

@@ -22,6 +22,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        //
+        // ค่าเสื่อมประจำเดือน รันต้นเดือน (วันที่ 1 เวลา 01:10)
+        $schedule->command('assets:post-depreciation')->monthlyOn(1,'01:10');
     }
 }

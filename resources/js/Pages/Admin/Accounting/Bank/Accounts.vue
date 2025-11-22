@@ -1,13 +1,15 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3'
+import AdminLayout from '@/Layouts/AdminLayout.vue'
 const props = defineProps({ rows: Object })
 </script>
 <template>
-  <Head title="Bank Accounts" />
-  <div class="p-6">
-    <h1 class="text-xl font-semibold mb-4">Bank Accounts</h1>
-    <div class="overflow-x-auto bg-white shadow rounded">
-      <table class="min-w-full">
+  <AdminLayout>
+    <Head title="Bank Accounts" />
+    <div class="p-6">
+      <h1 class="text-xl font-semibold mb-4">Bank Accounts</h1>
+      <div class="overflow-x-auto bg-white shadow rounded">
+        <table class="min-w-full">
         <thead>
           <tr class="bg-gray-50 text-left text-sm">
             <th class="p-3">ID</th>
@@ -31,7 +33,8 @@ const props = defineProps({ rows: Object })
             </td>
           </tr>
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
-  </div>
+  </AdminLayout>
 </template>

@@ -241,6 +241,12 @@
             <td class="right" style="border:1px solid #ccc; padding:6px; font-weight:700;">
                 {{ number_format($inv->total, 2) }}</td>
         </tr>
+        @if(!empty($inv->base_total_decimal))
+        <tr>
+            <td class="label">Base total (เทียบสกุลฐาน)</td>
+            <td class="right" style="border:1px solid #ccc; padding:6px;">{{ number_format($inv->base_total_decimal, 2) }}</td>
+        </tr>
+        @endif
         @if(!empty($inv->deposit_type) && $inv->deposit_type !== 'none')
         <tr>
             <td class="label">Deposit @if($inv->deposit_type==='percent') ({{ number_format($inv->deposit_value_decimal ?? 0,2) }}%) @endif</td>

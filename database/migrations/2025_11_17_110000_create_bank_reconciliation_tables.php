@@ -7,7 +7,8 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('bank_transactions', function (Blueprint $t) {
+        if (! Schema::hasTable('bank_transactions')) {
+            Schema::create('bank_transactions', function (Blueprint $t) {
             $t->id();
             $t->unsignedBigInteger('business_id')->index();
             $t->unsignedBigInteger('bank_account_id')->index();
@@ -19,9 +20,11 @@ return new class extends Migration {
             $t->boolean('matched')->default(false)->index();
             $t->timestamps();
             $t->index(['bank_account_id','date']);
-        });
+            });
+        }
 
-        Schema::create('reconciliations', function (Blueprint $t) {
+        if (! Schema::hasTable('reconciliations')) {
+            Schema::create('reconciliations', function (Blueprint $t) {
             $t->id();
             $t->unsignedBigInteger('business_id')->index();
             $t->unsignedBigInteger('bank_account_id')->index();
@@ -33,9 +36,11 @@ return new class extends Migration {
             $t->enum('status', ['open','in_progress','closed'])->default('open');
             $t->timestamps();
             $t->index(['bank_account_id','period_end']);
-        });
+            });
+        }
 
-        Schema::create('reconciliation_matches', function (Blueprint $t) {
+        if (! Schema::hasTable('reconciliation_matches')) {
+            Schema::create('reconciliation_matches', function (Blueprint $t) {
             $t->id();
             $t->unsignedBigInteger('reconciliation_id')->index();
             $t->unsignedBigInteger('bank_transaction_id')->index();
@@ -44,7 +49,8 @@ return new class extends Migration {
             $t->enum('method', ['auto','manual'])->default('auto');
             $t->timestamps();
             $t->unique(['reconciliation_id','bank_transaction_id']);
-        });
+            });
+        }
     }
 
     public function down(): void

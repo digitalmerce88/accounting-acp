@@ -22,11 +22,34 @@
             <td class="p-2 border">{{ r.vendor?.name || '-' }}</td>
             <td class="p-2 border">{{ fmtDMY(r.issue_date) }}</td>
             <td class="p-2 border text-right">{{ fmt(r.total) }}</td>
-            <td class="p-2 border">{{ r.status || '-' }}</td>
             <td class="p-2 border">
-              <div class="flex gap-2">
+              <div class="flex items-center gap-2">
+
+                <span v-if="r.approval_status" class="text-xs px-2 py-0.5 rounded border" :class="badgeClass(r.approval_status)">{{ r.approval_status }}</span>
+              </div>
+            </td>
+            <td class="p-2 border">
+              <div class="flex gap-2 items-center">
                 <button @click="openView(r.id)" class="px-2 py-0.5 text-xs bg-gray-100 border rounded">ดู</button>
                 <button v-if="r.status==='draft'" @click="remove(r.id)" class="px-2 py-0.5 text-xs bg-red-600 text-white rounded">ลบ</button>
+
+                <div class="flex items-center gap-2">
+                  <template v-if="r.approval_status==='draft'">
+                    <button @click.prevent="openApproval('submit', r.id)" class="px-2 py-0.5 text-xs bg-yellow-400 text-white rounded">ส่งอนุมัติ</button>
+                  </template>
+                  <template v-else-if="r.approval_status==='submitted'">
+                    <button v-if="auth.is_admin" @click.prevent="openApproval('approve', r.id)" class="px-2 py-0.5 text-xs bg-green-600 text-white rounded">อนุมัติ</button>
+                    <span v-else class="text-xs px-2 py-0.5 border rounded text-gray-600">รออนุมัติ</span>
+                  </template>
+                  <template v-else-if="r.approval_status==='approved'">
+                    <button v-if="auth.is_admin" @click.prevent="openApproval('lock', r.id)" class="px-2 py-0.5 text-xs bg-gray-800 text-white rounded">ล็อก</button>
+                    <span v-else class="text-xs px-2 py-0.5 border rounded text-gray-600">อนุมัติ</span>
+                  </template>
+                  <template v-else-if="r.approval_status==='locked'">
+                    <button v-if="auth.is_admin" @click.prevent="openApproval('unlock', r.id)" class="px-2 py-0.5 text-xs bg-indigo-600 text-white rounded">ปลดล็อก</button>
+                    <span v-else class="text-xs px-2 py-0.5 border rounded text-gray-600">ล็อก</span>
+                  </template>
+                </div>
               </div>
             </td>
           </tr>
@@ -51,7 +74,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
           <div><div class="text-gray-500">เลขที่</div><div class="font-medium">{{ item.number || item.id }}</div></div>
           <div><div class="text-gray-500">วันที่</div><div class="font-medium">{{ fmtDMY(item.issue_date) }}</div></div>
-          <div><div class="text-gray-500">สถานะ</div><div class="font-medium">{{ item.status || '-' }}</div></div>
+          <div><div class="text-gray-500">สถานะ</div><div class="font-medium">{{ item.approval_status || '-' }}</div></div>
           <div><div class="text-gray-500">รวมสุทธิ</div><div class="font-semibold">{{ fmt(item.total) }}</div></div>
         </div>
         <div class="overflow-x-auto">
@@ -76,6 +99,14 @@
       </div>
     </div>
   </Modal>
+  <ApprovalCommentModal
+    :show="approvalShow"
+    :title="approvalTitle"
+    v-model="approvalComment"
+    :submitting="approvalSubmitting"
+    @submit="doApproval"
+    @cancel="closeApproval"
+  />
 </template>
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
@@ -84,8 +115,20 @@ import { confirmDialog } from '@/utils/swal'
 import { computed, ref } from 'vue'
 import { fmtDMY } from '@/utils/format'
 import Modal from '@/Components/Modal.vue'
+import ApprovalCommentModal from '@/Components/ApprovalCommentModal.vue'
 const rows = computed(()=> usePage().props.rows || {data:[]})
+// auth: derive is_admin from roles if missing so UI works even if server omitted is_admin
+const pageAuth = computed(()=> usePage().props.auth || {})
+const auth = computed(()=> ({
+  ...(pageAuth.value || {}),
+  is_admin: (pageAuth.value && typeof pageAuth.value.is_admin !== 'undefined') ? pageAuth.value.is_admin : (Array.isArray(pageAuth.value?.roles) && pageAuth.value.roles.includes('admin'))
+}))
 function fmt(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) }
+function badgeClass(s){
+  return s==='approved' ? 'border-green-600 text-green-700' :
+         s==='submitted' ? 'border-yellow-600 text-yellow-700' :
+         s==='locked' ? 'border-gray-700 text-gray-700' : 'border-gray-400 text-gray-500'
+}
 
 // modal state
 const showModal = ref(false)
@@ -103,5 +146,29 @@ async function openView(id){
     loading.value = false
   }
 }
-async function remove(id){ if(await confirmDialog('ลบเอกสารนี้?')) router.delete(`/admin/documents/po/${id}`) }
+async function remove(id){
+  if(await confirmDialog('ลบเอกสารนี้?')){
+    router.delete(`/admin/documents/po/${id}`, { onFinish: () => router.reload() })
+  }
+}
+
+// Approval modal for quick actions from index
+const approvalShow = ref(false)
+const approvalAction = ref('submit')
+const approvalTarget = ref(null)
+const approvalComment = ref('')
+const approvalSubmitting = ref(false)
+const approvalTitle = computed(()=> approvalAction.value==='submit' ? 'ส่งอนุมัติเอกสาร' : approvalAction.value==='approve' ? 'อนุมัติเอกสาร' : approvalAction.value==='lock' ? 'ล็อกเอกสาร' : 'ปลดล็อกเอกสาร')
+function openApproval(act, id){ approvalAction.value = act; approvalTarget.value = id; approvalComment.value=''; approvalShow.value = true }
+function closeApproval(){ approvalShow.value = false; approvalTarget.value = null; approvalComment.value = '' }
+async function doApproval(commentArg){
+  approvalSubmitting.value = true
+  const id = approvalTarget.value
+  const payload = { comment: commentArg }
+  const url = approvalAction.value==='submit' ? `/admin/documents/po/${id}/submit` :
+              approvalAction.value==='approve' ? `/admin/documents/po/${id}/approve` :
+              approvalAction.value==='lock' ? `/admin/documents/po/${id}/lock` :
+              `/admin/documents/po/${id}/unlock`
+  router.post(url, payload, { onFinish: () => { approvalSubmitting.value=false; approvalShow.value=false; router.reload() } })
+}
 </script>

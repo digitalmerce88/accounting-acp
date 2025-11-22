@@ -6,6 +6,9 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
 use App\Models\Invoice;
 use App\Models\Bill;
+use App\Models\Quote;
+use App\Models\PurchaseOrder;
+use App\Models\WhtCertificate;
 
 class Numbering
 {
@@ -27,6 +30,15 @@ class Numbering
                 return self::format($pattern, $seq, $date);
             case 'bill':
                 $seq = self::sequenceForBill($businessId, $date, $pattern);
+                return self::format($pattern, $seq, $date);
+            case 'quote':
+                $seq = self::sequenceForModel(Quote::class, $businessId, $date, $pattern, 'issue_date');
+                return self::format($pattern, $seq, $date);
+            case 'po':
+                $seq = self::sequenceForModel(PurchaseOrder::class, $businessId, $date, $pattern, 'issue_date');
+                return self::format($pattern, $seq, $date);
+            case 'wht':
+                $seq = self::sequenceForModel(WhtCertificate::class, $businessId, $date, $pattern, 'issued_at');
                 return self::format($pattern, $seq, $date);
             default:
                 $seq = 1;
@@ -60,6 +72,26 @@ class Numbering
         }
         if (str_contains($pattern, 'DD')) {
             $q->whereDay('bill_date', (int)$date->format('j'));
+        }
+        return $q->count() + 1;
+    }
+
+    /**
+     * Generic sequence for model classes where date field name may vary.
+     */
+    protected static function sequenceForModel(string $modelClass, int $bizId, Carbon $date, string $pattern, string $dateField = 'issue_date'): int
+    {
+        if (!class_exists($modelClass)) return 1;
+        $q = $modelClass::where('business_id', $bizId);
+        // apply year/month/day filters based on pattern tokens
+        if (str_contains($pattern, 'YYYY') || str_contains($pattern, 'YY')) {
+            $q->whereYear($dateField, (int)$date->format('Y'));
+        }
+        if (str_contains($pattern, 'MM')) {
+            $q->whereMonth($dateField, (int)$date->format('n'));
+        }
+        if (str_contains($pattern, 'DD')) {
+            $q->whereDay($dateField, (int)$date->format('j'));
         }
         return $q->count() + 1;
     }

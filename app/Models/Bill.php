@@ -12,7 +12,9 @@ class Bill extends Model
     protected $fillable = [
         'business_id','vendor_id','bill_date','due_date','number','subtotal','vat_decimal','total','wht_rate_decimal','wht_amount_decimal','status','approval_status','note',
         'discount_type','discount_value_decimal','discount_amount_decimal','deposit_type','deposit_value_decimal','deposit_amount_decimal',
-        'submitted_by','submitted_at','approved_by','approved_at','locked_by','locked_at'
+        'submitted_by','submitted_at','approved_by','approved_at','locked_by','locked_at',
+        // multi-currency
+        'currency_code','fx_rate_decimal','base_total_decimal'
     ];
 
     protected $casts = [

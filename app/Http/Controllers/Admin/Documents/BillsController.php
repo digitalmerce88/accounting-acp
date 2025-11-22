@@ -33,6 +33,8 @@ class BillsController extends Controller
             'bill_date'                  => ['required', 'date'],
             'due_date'                   => ['nullable', 'date'],
             'number'                     => ['nullable', 'string', 'max:50'],
+            'currency_code'              => ['nullable','string','size:3'],
+            'fx_rate_decimal'            => ['nullable','numeric','min:0'],
             'vendor_id'                  => ['nullable', 'integer'],
             'vendor'                     => ['nullable', 'array'],
             'vendor.name'                => ['nullable', 'string', 'max:200'],
@@ -67,6 +69,7 @@ class BillsController extends Controller
         );
 
         $bill = new Bill();
+        $fx = (float)($data['fx_rate_decimal'] ?? 1);
         $bill->fill(array_merge($data, [
             'business_id' => $bizId,
             'subtotal'    => $calc['subtotal'],
@@ -75,6 +78,7 @@ class BillsController extends Controller
             'discount_type' => $calc['discount_type'],
             'vat_decimal' => $calc['vat_decimal'],
             'total'       => $calc['total'],
+            'base_total_decimal' => $fx > 0 ? round($calc['total'] / $fx, 2) : $calc['total'],
             'deposit_amount_decimal' => $calc['deposit_amount_decimal'],
             'deposit_value_decimal' => $calc['deposit_value_decimal'],
             'deposit_type' => $calc['deposit_type'],
@@ -154,6 +158,8 @@ class BillsController extends Controller
             'bill_date'                  => ['required', 'date'],
             'due_date'                   => ['nullable', 'date'],
             'number'                     => ['nullable', 'string', 'max:50'],
+            'currency_code'              => ['nullable','string','size:3'],
+            'fx_rate_decimal'            => ['nullable','numeric','min:0'],
             'vendor_id'                  => ['nullable', 'integer'],
             'vendor'                     => ['nullable', 'array'],
             'vendor.name'                => ['nullable', 'string', 'max:200'],
@@ -185,6 +191,7 @@ class BillsController extends Controller
             (float)($data['deposit_value_decimal'] ?? 0)
         );
 
+        $fx = (float)($data['fx_rate_decimal'] ?? ($bill->fx_rate_decimal ?? 1));
         $bill->fill(array_merge($data, [
             'subtotal'    => $calc['subtotal'],
             'discount_amount_decimal' => $calc['discount_amount_decimal'],
@@ -192,6 +199,7 @@ class BillsController extends Controller
             'discount_type' => $calc['discount_type'],
             'vat_decimal' => $calc['vat_decimal'],
             'total'       => $calc['total'],
+            'base_total_decimal' => $fx > 0 ? round($calc['total'] / $fx, 2) : $calc['total'],
             'deposit_amount_decimal' => $calc['deposit_amount_decimal'],
             'deposit_value_decimal' => $calc['deposit_value_decimal'],
             'deposit_type' => $calc['deposit_type'],
