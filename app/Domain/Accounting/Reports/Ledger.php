@@ -1,6 +1,9 @@
 <?php
 namespace App\Domain\Accounting\Reports;
+
 use App\Models\JournalLine;
+use Illuminate\Support\Facades\Schema;
+
 class Ledger {
     public function run($accountId, $from=null, $to=null): array {
         $q = JournalLine::query()
@@ -9,6 +12,11 @@ class Ledger {
             ->selectRaw('e.date, e.id as entry_id, e.memo, journal_lines.debit, journal_lines.credit, a.name as account_name')
             ->where('e.status','posted')
             ->orderBy('e.date')->orderBy('e.id');
+
+        if (Schema::hasColumn('journal_entries', 'is_closing')) {
+            $q->where('e.is_closing', false);
+        }
+
         if ($accountId) {
             $q->where('journal_lines.account_id', $accountId);
         }

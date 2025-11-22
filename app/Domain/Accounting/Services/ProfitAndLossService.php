@@ -74,11 +74,16 @@ class ProfitAndLossService
     private function sumType(string $type, string $polarity, $start, $end): float
     {
         $col = $polarity === 'debit' ? 'journal_lines.debit' : 'journal_lines.credit';
-        return (float) JournalLine::query()
+        $q = JournalLine::query()
             ->join('journal_entries as je', 'je.id', '=', 'journal_lines.entry_id')
             ->join('accounts as a', 'a.id', '=', 'journal_lines.account_id')
             ->whereBetween('je.date', [$start->toDateString(), $end->toDateString()])
-            ->where('a.type', $type)
-            ->sum($col);
+            ->where('a.type', $type);
+
+        if (Schema::hasColumn('journal_entries', 'is_closing')) {
+            $q->where('je.is_closing', false);
+        }
+
+        return (float) $q->sum($col);
     }
 }

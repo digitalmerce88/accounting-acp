@@ -3,8 +3,9 @@
 namespace App\Domain\Accounting;
 
 use App\Models\{Account, JournalEntry, JournalLine, ClosingPeriod};
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 
 class ClosingService
 {
@@ -22,6 +23,7 @@ class ClosingService
                 'date' => $date,
                 'memo' => sprintf('ปิดงวด %04d-%02d', $year, $month),
                 'status' => 'posted',
+                'is_closing' => Schema::hasColumn('journal_entries', 'is_closing') ? true : false,
             ]);
 
             // Sum balances per account in period
@@ -69,11 +71,16 @@ class ClosingService
     {
         $start = Carbon::createFromDate($year, $month, 1)->startOfMonth()->toDateString();
         $end = Carbon::createFromDate($year, $month, 1)->endOfMonth()->toDateString();
-        $row = \DB::table('journal_lines as jl')
+        $row = DB::table('journal_lines as jl')
             ->join('journal_entries as je','je.id','=','jl.entry_id')
             ->whereBetween('je.date', [$start, $end])
-            ->where('jl.account_id', $accountId)
-            ->selectRaw('COALESCE(SUM(jl.debit),0) as deb, COALESCE(SUM(jl.credit),0) as cred')
+            ->where('jl.account_id', $accountId);
+
+        if (Schema::hasColumn('journal_entries', 'is_closing')) {
+            $row->where('je.is_closing', false);
+        }
+
+        $row = $row->selectRaw('COALESCE(SUM(jl.debit),0) as deb, COALESCE(SUM(jl.credit),0) as cred')
             ->first();
         return [ (float)($row->deb ?? 0), (float)($row->cred ?? 0) ];
     }

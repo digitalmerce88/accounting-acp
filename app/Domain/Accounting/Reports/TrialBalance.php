@@ -1,6 +1,9 @@
 <?php
 namespace App\Domain\Accounting\Reports;
+
 use App\Models\JournalLine;
+use Illuminate\Support\Facades\Schema;
+
 class TrialBalance {
     public function run($from=null, $to=null): array {
         $q = JournalLine::query()
@@ -10,6 +13,11 @@ class TrialBalance {
             ->where('e.status','posted')
             ->groupBy('a.id','a.code','a.name','a.type')
             ->orderBy('a.code');
+
+        if (Schema::hasColumn('journal_entries', 'is_closing')) {
+            $q->where('e.is_closing', false);
+        }
+
         if ($from) $q->where('e.date','>=',$from);
         if ($to) $q->where('e.date','<=',$to);
         return $q->get()->map(fn($r)=>[$r->code,$r->name,$r->type,(float)$r->dr,(float)$r->cr])->all();

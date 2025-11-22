@@ -42,6 +42,13 @@ class SummaryReportService
             ->join('accounts as a', 'a.id', '=', 'journal_lines.account_id')
             ->whereBetween('je.date', [$start->toDateString(), $end->toDateString()])
             ->whereIn('a.type', ['revenue','expense'])
+            ;
+
+        if (Schema::hasColumn('journal_entries', 'is_closing')) {
+            $rows->where('je.is_closing', false);
+        }
+
+        $rows = $rows
             ->selectRaw("a.id, a.code, a.name, a.type,
                 SUM(CASE WHEN a.type='revenue' THEN journal_lines.credit ELSE 0 END) as revenue,
                 SUM(CASE WHEN a.type='expense' THEN journal_lines.debit ELSE 0 END) as expense")
@@ -106,23 +113,33 @@ class SummaryReportService
     private function sumByType(string $accountType, string $polarity, $start, $end): float
     {
         $col = $polarity === 'debit' ? 'journal_lines.debit' : 'journal_lines.credit';
-        return (float) JournalLine::query()
+        $q = JournalLine::query()
             ->join('journal_entries as je', 'je.id', '=', 'journal_lines.entry_id')
             ->join('accounts as a', 'a.id', '=', 'journal_lines.account_id')
             ->whereBetween('je.date', [$start->toDateString(), $end->toDateString()])
-            ->where('a.type', $accountType)
-            ->sum($col);
+            ->where('a.type', $accountType);
+
+        if (Schema::hasColumn('journal_entries', 'is_closing')) {
+            $q->where('je.is_closing', false);
+        }
+
+        return (float) $q->sum($col);
     }
 
     private function sumAccount(int $accountId = null, string $polarity, $start, $end): float
     {
         if (!$accountId) return 0.0;
         $col = $polarity === 'debit' ? 'journal_lines.debit' : 'journal_lines.credit';
-        return (float) JournalLine::query()
+        $q = JournalLine::query()
             ->join('journal_entries as je', 'je.id', '=', 'journal_lines.entry_id')
             ->whereBetween('je.date', [$start->toDateString(), $end->toDateString()])
-            ->where('journal_lines.account_id', $accountId)
-            ->sum($col);
+            ->where('journal_lines.account_id', $accountId);
+
+        if (Schema::hasColumn('journal_entries', 'is_closing')) {
+            $q->where('je.is_closing', false);
+        }
+
+        return (float) $q->sum($col);
     }
 
     private function accountByCode(string $code, array $filters): ?int
