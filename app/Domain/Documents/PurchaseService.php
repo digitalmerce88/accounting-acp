@@ -12,13 +12,18 @@ class PurchaseService
     {
         $bill = Bill::where('business_id', $businessId)->findOrFail($billId);
 
+        // Idempotent: if already paid, return directly
+        if ($bill->status === 'paid') {
+            return $bill;
+        }
+
         $vatApplicable = ($bill->vat_decimal ?? 0) > 0;
         $whtRate = (float) ($bill->wht_rate_decimal ?? 0);
 
         // Use subtotal+vat if total is missing
         $amount = $bill->total ?? (($bill->subtotal ?? 0) + ($bill->vat_decimal ?? 0));
 
-        (new PostingService())->postExpense([
+        $entry = (new PostingService())->postExpense([
             'business_id' => $businessId,
             'date' => $date,
             'memo' => 'Bill ' . ($bill->number ?? $bill->id),
@@ -67,6 +72,8 @@ class PurchaseService
             ]);
         }
 
+        // save posting id for traceability
+        $bill->posting_entry_id = $entry->id ?? null;
         $bill->status = 'paid';
         $bill->save();
         return $bill;

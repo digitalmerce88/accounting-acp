@@ -10,7 +10,7 @@ class PayrollRun extends Model
     use HasFactory;
 
     protected $fillable = [
-        'business_id','period_month','period_year','status','processed_at','note'
+        'business_id','period_month','period_year','status','processed_at','note','posting_entry_id'
     ];
 
     protected $casts = [

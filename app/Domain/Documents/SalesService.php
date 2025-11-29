@@ -13,11 +13,16 @@ class SalesService
     {
         $inv = Invoice::where('business_id', $businessId)->findOrFail($invoiceId);
 
+        // Idempotent: if already paid, return directly
+        if ($inv->status === 'paid') {
+            return $inv;
+        }
+
         // derive VAT applicability from invoice fields
         $vatApplicable = ($inv->vat_decimal ?? 0) > 0 || ($inv->is_tax_invoice ?? false);
         $whtRate = 0.0; // simple: invoices generally WHT 0 unless specified in UI later
 
-        (new PostingService())->postIncome([
+        $entry = (new PostingService())->postIncome([
             'business_id' => $businessId,
             'date' => $date,
             'memo' => 'Invoice ' . ($inv->number ?? $inv->id),
@@ -44,6 +49,8 @@ class SalesService
             }
         }
 
+        // save posting id for traceability
+        $inv->posting_entry_id = $entry->id ?? null;
         $inv->status = 'paid';
         $inv->save();
         return $inv;

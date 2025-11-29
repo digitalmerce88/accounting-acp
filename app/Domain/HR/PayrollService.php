@@ -45,13 +45,20 @@ class PayrollService
     public function pay(int $runId, int $businessId, string $payDate): PayrollRun
     {
         $run = PayrollRun::with('items')->findOrFail($runId);
+        // Safety: only allow pay when locked
+        if ($run->status !== 'locked') {
+            throw new \RuntimeException('Payroll run must be locked before paying');
+        }
+
+        // Idempotent: if already paid, return existing
+        if ($run->status === 'paid') {
+            return $run;
+        }
+
         $svc = new PostingService();
 
         $sumBasicOther = (float) $run->items->sum(fn($i)=> ($i->earning_basic_decimal + $i->earning_other_decimal));
         $sumSsoEmployer = (float) $run->items->sum('sso_employer_decimal');
-        $sumNet = (float) $run->items->sum('net_pay_decimal');
-        $sumSso = (float) $run->items->sum(fn($i)=> ($i->sso_employee_decimal + $i->sso_employer_decimal));
-        $sumWht = (float) $run->items->sum('wht_decimal');
 
         // Post summarized journal for the run
         $entry = $svc->postExpense([
@@ -67,9 +74,8 @@ class PayrollService
             'vendor_id' => null,
         ]);
 
-        // Note: PostingService already handles cash/bank + wht + vat for expense.
-        // For payroll specifics, we might extend PostingService later to split lines.
-
+        // persist posting id for traceability
+        $run->posting_entry_id = $entry->id ?? null;
         $run->status = 'paid';
         $run->processed_at = now();
         $run->save();
