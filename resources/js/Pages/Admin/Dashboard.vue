@@ -37,7 +37,7 @@
             <tr v-for="j in recent_journals" :key="j.id" class="border-b">
               <td class="p-2 border">{{ j.date }}</td>
               <td class="p-2 border">{{ j.memo }}</td>
-              <td class="p-2 border capitalize">{{ j.status }}</td>
+              <td class="p-2 border capitalize">{{ statusLabel(j.status) }}</td>
             </tr>
             <tr v-if="recent_journals.length===0"><td colspan="3" class="p-3 text-center text-gray-500">ยังไม่มีรายการ</td></tr>
           </tbody>
@@ -151,6 +151,7 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { Link, usePage } from '@inertiajs/vue3'
 import { computed } from 'vue'
+import { statusLabel } from '@/utils/statusLabels'
 
 const page = usePage()
 const metrics = computed(() => page.props.metrics || { accounts_count: 0, journals_count: 0, tb_total_dr: 0, tb_total_cr: 0 })

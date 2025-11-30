@@ -25,7 +25,7 @@
             <td class="p-2 border">
               <div class="flex items-center gap-2">
 
-                <span v-if="r.approval_status" class="text-xs px-2 py-0.5 rounded border" :class="badgeClass(r.approval_status)">{{ r.approval_status }}</span>
+                <span v-if="r.approval_status" class="text-xs px-2 py-0.5 rounded border" :class="badgeClass(r.approval_status)">{{ approvalLabel(r.approval_status) }}</span>
               </div>
             </td>
             <td class="p-2 border">
@@ -113,6 +113,7 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { usePage, router } from '@inertiajs/vue3'
 import { confirmDialog } from '@/utils/swal'
 import { computed, ref } from 'vue'
+import { approvalLabel } from '@/utils/statusLabels'
 import { fmtDMY } from '@/utils/format'
 import Modal from '@/Components/Modal.vue'
 import ApprovalCommentModal from '@/Components/ApprovalCommentModal.vue'

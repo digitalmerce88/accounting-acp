@@ -54,8 +54,12 @@ class PayrollController extends Controller
 
     public function lock(Request $request, int $id, PayrollService $svc)
     {
-        $svc->lock($id);
-        return back()->with('success', 'ล็อกรอบเงินเดือนแล้ว');
+        try {
+            $svc->lock($id);
+            return back()->with('success', 'ล็อกรอบเงินเดือนแล้ว');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     public function unlock(Request $request, int $id)
@@ -73,8 +77,12 @@ class PayrollController extends Controller
     {
         $date = $request->validate(['date' => ['nullable','date']]);
         $bizId = (int) ($request->user()->business_id ?? 1);
-        $svc->pay($id, $bizId, $date['date'] ?? now()->toDateString());
-        return back()->with('success', 'จ่ายเงินเดือนเรียบร้อย');
+        try {
+            $svc->pay($id, $bizId, $date['date'] ?? now()->toDateString());
+            return back()->with('success', 'จ่ายเงินเดือนเรียบร้อย');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     public function destroy(Request $request, int $id)

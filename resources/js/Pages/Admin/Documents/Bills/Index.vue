@@ -25,7 +25,7 @@
             <td class="p-2 border">
               <div class="flex items-center gap-2">
 
-                <span v-if="r.approval_status" class="text-xs px-2 py-0.5 rounded border" :class="badgeClass(r.approval_status)">{{ r.approval_status }}</span>
+                <span v-if="r.approval_status" class="text-xs px-2 py-0.5 rounded border" :class="badgeClass(r.approval_status)">{{ approvalLabel(r.approval_status) }}</span>
               </div>
             </td>
             <td class="p-2 border">
@@ -77,7 +77,7 @@
           <div><div class="text-gray-500">เลขที่</div><div class="font-medium">{{ item.number || item.id }}</div></div>
           <div><div class="text-gray-500">วันที่</div><div class="font-medium">{{ fmtDMY(item.bill_date) }}</div></div>
           <div><div class="text-gray-500">ครบกำหนด</div><div class="font-medium">{{ fmtDMY(item.due_date) }}</div></div>
-          <div><div class="text-gray-500">สถานะ</div><div class="font-medium">{{ item.approval_status || '-' }}</div></div>
+          <div><div class="text-gray-500">สถานะ</div><div class="font-medium">{{ item.approval_status ? approvalLabel(item.approval_status) : '-' }}</div></div>
           <div><div class="text-gray-500">รวมสุทธิ</div><div class="font-semibold">{{ fmt(item.total) }}</div></div>
         </div>
         <div class="overflow-x-auto">
@@ -115,6 +115,7 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { usePage, router } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
+import { approvalLabel } from '@/utils/statusLabels'
 import { fmtDMY } from '@/utils/format'
 import { confirmDialog } from '@/utils/swal'
 import Modal from '@/Components/Modal.vue'

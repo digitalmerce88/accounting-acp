@@ -30,7 +30,7 @@
       </div>
       <div>
         <div class="text-gray-500">สถานะ</div>
-        <div class="font-medium" :class="item.status==='disposed' ? 'text-red-600' : 'text-green-700'">{{ item.status }}</div>
+        <div class="font-medium" :class="item.status==='disposed' ? 'text-red-600' : 'text-green-700'">{{ statusLabel(item.status) }}</div>
       </div>
       <div>
         <div class="text-gray-500">ค่าเสื่อม / เดือน (SLM)</div>
@@ -55,7 +55,7 @@
           <tr v-for="d in item.depreciation_entries || []" :key="d.id">
             <td class="border p-2">{{ d.period_year }}-{{ String(d.period_month).padStart(2,'0') }}</td>
             <td class="border p-2 text-right">{{ fmt(d.amount_decimal) }}</td>
-            <td class="border p-2 text-center">{{ d.posted_journal_entry_id ? 'POSTED' : '-' }}</td>
+            <td class="border p-2 text-center">{{ d.posted_journal_entry_id ? statusLabel('posted') : '-' }}</td>
           </tr>
           <tr v-if="!item.depreciation_entries || item.depreciation_entries.length===0"><td colspan="3" class="p-3 text-center text-gray-500">ไม่มีข้อมูล</td></tr>
         </tbody>
@@ -81,6 +81,7 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { usePage, router } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
+import { statusLabel } from '@/utils/statusLabels'
 const page = usePage()
 const item = page.props.item
 function fmt(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) }

@@ -27,7 +27,7 @@
             <td class="border p-2">{{ r.category?.name || '-' }}</td>
             <td class="border p-2 text-right">{{ fmt(r.purchase_cost_decimal) }}</td>
             <td class="border p-2 text-right">{{ fmt(monthly(r)) }}</td>
-            <td class="border p-2 text-center uppercase" :class="r.status==='disposed' ? 'text-red-600' : 'text-green-700'">{{ r.status }}</td>
+            <td class="border p-2 text-center uppercase" :class="r.status==='disposed' ? 'text-red-600' : 'text-green-700'">{{ statusLabel(r.status) }}</td>
             <td class="border p-2 text-center">
               <a :href="`/admin/assets/assets/${r.id}`" class="text-blue-700">ดู</a>
             </td>
@@ -41,6 +41,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { usePage } from '@inertiajs/vue3'
+import { statusLabel } from '@/utils/statusLabels'
 const page = usePage()
 const rows = page.props.rows
 function fmt(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) }

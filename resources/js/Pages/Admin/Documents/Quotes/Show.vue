@@ -27,8 +27,8 @@
       <div>
           <div class="text-gray-500">สถานะ</div>
           <div class="font-medium flex items-center gap-2">
-          <span>{{ item.approval_status || '-' }}</span>
-          <span v-if="item.approval_status" class="text-xs px-2 py-0.5 rounded border" :class="badgeClass(item.approval_status)">{{ item.approval_status }}</span>
+          <span>{{ item.approval_status ? approvalLabel(item.approval_status) : '-' }}</span>
+          <span v-if="item.approval_status" class="text-xs px-2 py-0.5 rounded border" :class="badgeClass(item.approval_status)">{{ approvalLabel(item.approval_status) }}</span>
         </div>
       </div>
     </div>
@@ -53,6 +53,7 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { usePage, router } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
+import { approvalLabel } from '@/utils/statusLabels'
 import { confirmDialog } from '@/utils/swal'
 import { fmtDMY } from '@/utils/format'
 import ApprovalCommentModal from '@/Components/ApprovalCommentModal.vue'

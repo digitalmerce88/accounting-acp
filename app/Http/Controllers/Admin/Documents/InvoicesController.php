@@ -275,8 +275,12 @@ class InvoicesController extends Controller
     {
         $data = $request->validate(['date'=>['nullable','date'],'method'=>['nullable','in:cash,bank']]);
         $bizId = (int) ($request->user()->business_id ?? 1);
-        $svc->markPaid($id, $bizId, $data['date'] ?? now()->toDateString(), $data['method'] ?? 'bank');
-        return back()->with('success','Invoice marked as paid');
+        try {
+            $svc->markPaid($id, $bizId, $data['date'] ?? now()->toDateString(), $data['method'] ?? 'bank');
+            return back()->with('success', __('messages.invoice_paid'));
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     public function pdf(Request $request, int $id)

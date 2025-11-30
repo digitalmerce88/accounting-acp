@@ -267,7 +267,7 @@
         <!-- Flash banners -->
         <div v-if="flash.error" class="p-3 border border-red-300 bg-red-50 text-red-700 rounded">{{ flash.error }}</div>
         <div v-else-if="flash.success" class="p-3 border border-green-300 bg-green-50 text-green-700 rounded">{{ flash.success }}</div>
-        <div v-else-if="flash.status" class="p-3 border border-blue-300 bg-blue-50 text-blue-700 rounded">{{ flash.status }}</div>
+        <div v-else-if="flash.status" class="p-3 border border-blue-300 bg-blue-50 text-blue-700 rounded">{{ flashLabel(flash.status) }}</div>
 
         <div class="bg-white border rounded-md p-4">
           <slot />
@@ -281,6 +281,7 @@
 <script setup>
 import { Link, usePage } from '@inertiajs/vue3'
 import { computed, ref, onMounted } from 'vue'
+import { flashLabel } from '@/utils/statusLabels'
 
 const page = usePage()
 const sidebarOpen = ref(false)
